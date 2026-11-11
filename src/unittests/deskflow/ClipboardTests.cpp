@@ -230,14 +230,34 @@ void ClipboardTests::equalClipboards()
   clipboard2.close();
 }
 
-// Deliberately malformed peer input. Run only in an isolated sanitizer process.
+// Unknown wire formats must be skipped without losing the following valid record.
 void ClipboardTests::auditMalformedFormatId()
 {
-  if (!qEnvironmentVariableIsSet("DESKFLOW_AUDIT_MALFORMED"))
-    QSKIP("Malformed format audit is opt-in; use an isolated sanitizer build");
-  const unsigned char bytes[] = {0, 0, 0, 1, 255, 255, 255, 255, 0, 0, 0, 0};
-  Clipboard clipboard;
-  clipboard.unmarshall(std::string(reinterpret_cast<const char *>(bytes), sizeof(bytes)), 0);
+  for (uint32_t id : {static_cast<uint32_t>(IClipboard::Format::TotalFormats), 0x7fffffffu, 0x80000000u,
+                      0xffffffffu}) {
+    std::string data;
+    auto append = [&data](uint32_t value) {
+      for (int shift = 24; shift >= 0; shift -= 8)
+        data += static_cast<char>((value >> shift) & 0xff);
+    };
+    append(2);
+    append(id);
+    append(3);
+    data += "bad";
+    append(static_cast<uint32_t>(IClipboard::Format::Text));
+    append(2);
+    data += "ok";
+    Clipboard clipboard;
+    clipboard.unmarshall(data, 0);
+    clipboard.open(0);
+    QCOMPARE(clipboard.get(IClipboard::Format::Text), std::string("ok"));
+    const auto invalid = static_cast<IClipboard::Format>(id);
+    clipboard.add(invalid, "invalid");
+    QVERIFY(!clipboard.has(invalid));
+    QVERIFY(clipboard.get(invalid).empty());
+    QCOMPARE(clipboard.get(IClipboard::Format::Text), std::string("ok"));
+    clipboard.close();
+  }
 }
 
 QTEST_MAIN(ClipboardTests)

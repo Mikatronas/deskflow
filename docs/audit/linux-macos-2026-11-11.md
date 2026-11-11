@@ -1,5 +1,9 @@
 # Linux–macOS audit, 2026-11-11
 
+## Fix follow-up
+
+The resumed session fixed unsigned clipboard format validation before enum conversion and added defensive bounds checks to Clipboard storage access. The malformed-format reproducer now runs as an ordinary regression test, covering boundary/high-bit IDs, skipping unknown payloads, preserving a subsequent valid record, and invalid direct storage access. All 13 clipboard test cases pass under ASan/UBSan (leak detection disabled). This source fix has not yet been deployed to the running applications. Findings below describe the original audit baseline.
+
 ## Scope and evidence
 
 Source baseline: `0d43a9031`; installed Linux and Mac cores report 1.27.0. Reviewed the active Linux/Mac settings, recent INFO logs, Linux clipboard bridge and Mac watcher source, and the input, clipboard, transport, authentication, recovery, and build paths listed below. This includes source/configuration review, optimized builds on both machines, native Mac delivery tests, direct LAN measurements and an isolated sanitizer reproducer. It is not an exhaustive security certification or a physical-device-to-application latency study. No application behavior or live configuration was changed.
