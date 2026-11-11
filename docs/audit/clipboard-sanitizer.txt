@@ -1,0 +1,23 @@
+********* Start testing of ClipboardTests *********
+Config: Using QtTest library 6.12.0, Qt 6.12.0 (x86_64-little_endian-lp64 shared (dynamic) release build; by GCC 16.2.1 20260810), omarchy 4.5.0
+PASS   : ClipboardTests::initTestCase()
+/usr/include/c++/16/bits/basic_string.h:271:31: runtime error: reference binding to null pointer of type 'char_type'
+    #0 0x55f310463534 in std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_set_length(unsigned long) /usr/include/c++/16/bits/basic_string.h:271
+    #1 0x55f310463534 in std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_assign(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&) /usr/include/c++/16/bits/basic_string.tcc:360
+    #2 0x55f310463534 in std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::assign(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&) /usr/include/c++/16/bits/basic_string.h:1795
+    #3 0x55f310463534 in std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::operator=(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&) /usr/include/c++/16/bits/basic_string.h:930
+    #4 0x55f310463534 in Clipboard::add(IClipboard::Format, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&) /home/mikas/Work/deskflow-custom/src/lib/deskflow/Clipboard.cpp:59
+    #5 0x55f310467a22 in IClipboard::unmarshall(IClipboard*, std::basic_string_view<char, std::char_traits<char> > const&, unsigned int) /home/mikas/Work/deskflow-custom/src/lib/deskflow/IClipboard.cpp:64
+    #6 0x55f31045becf in Clipboard::unmarshall(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, unsigned int) /home/mikas/Work/deskflow-custom/src/lib/deskflow/Clipboard.cpp:113
+    #7 0x55f31045281e in ClipboardTests::auditMalformedFormatId() /home/mikas/Work/deskflow-custom/src/unittests/deskflow/ClipboardTests.cpp:240
+    #8 0x7f1147ba23a0 in QMetaMethodInvoker::invokeImpl(QMetaMethod, void*, Qt::ConnectionType, long long, void const* const*, char const* const*, QtPrivate::QMetaTypeInterface const* const*) (/usr/lib/libQt6Core.so.6+0x1a23a0) (BuildId: 431db715687f9ab0ce66ba4379d344d7b672b510)
+    #9 0x7f1147ba2b35 in QMetaMethod::invokeImpl(QMetaMethod, void*, Qt::ConnectionType, long long, void const* const*, char const* const*, QtPrivate::QMetaTypeInterface const* const*) (/usr/lib/libQt6Core.so.6+0x1a2b35) (BuildId: 431db715687f9ab0ce66ba4379d344d7b672b510)
+    #10 0x7f114a1d486a  (/usr/lib/libQt6Test.so.6+0x2b86a) (BuildId: ef04c714b547d029dcc24cd9d2335de6fa8742a4)
+    #11 0x7f114a1dc0c0  (/usr/lib/libQt6Test.so.6+0x330c0) (BuildId: ef04c714b547d029dcc24cd9d2335de6fa8742a4)
+    #12 0x7f114a1df397 in QTest::qRun() (/usr/lib/libQt6Test.so.6+0x36397) (BuildId: ef04c714b547d029dcc24cd9d2335de6fa8742a4)
+    #13 0x7f114a1dfa85 in QTest::qExec(QObject*, int, char**) (/usr/lib/libQt6Test.so.6+0x36a85) (BuildId: ef04c714b547d029dcc24cd9d2335de6fa8742a4)
+    #14 0x55f31041bcc8 in main /home/mikas/Work/deskflow-custom/src/unittests/deskflow/ClipboardTests.cpp:243
+    #15 0x7f1146a27780  (/usr/lib/libc.so.6+0x27780) (BuildId: d320029ad1a23be2f4bce117fd321cbd23a2014b)
+    #16 0x7f1146a278b8 in __libc_start_main (/usr/lib/libc.so.6+0x278b8) (BuildId: d320029ad1a23be2f4bce117fd321cbd23a2014b)
+    #17 0x55f310433554 in _start (/home/mikas/Work/deskflow-custom/build/sanitize-audit/src/unittests/deskflow/ClipboardTests+0x171554) (BuildId: 9efac90e8176f155d3ec062be0052aa3669018b2)
+

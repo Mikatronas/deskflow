@@ -1,0 +1,22 @@
+********* Start testing of OSXKeyStateTests *********
+Config: Using QtTest library 6.12.0, Qt 6.12.0 (arm64-little_endian-lp64 shared (dynamic) release build; by Apple LLVM 21.0.0 (clang-2100.3.34.2)), macos 27.2.1
+PASS   : OSXKeyStateTests::initTestCase()
+QINFO  : OSXKeyStateTests::audit_nativeTyping(letters-10ms) 500 down/up pairs, including requested gaps and event processing: 8364 ms
+QINFO  : OSXKeyStateTests::audit_nativeTyping(letters-10ms) Native receiver: expected=500 actual=500
+QINFO  : OSXKeyStateTests::audit_nativeTyping(letters-10ms) inject-to-Qt delivery ms: p50=10.720 p95=12.629 p99=13.168 max=28.810
+PASS   : OSXKeyStateTests::audit_nativeTyping(letters-10ms)
+QINFO  : OSXKeyStateTests::audit_nativeTyping(letters-1ms) 500 down/up pairs, including requested gaps and event processing: 4181 ms
+QINFO  : OSXKeyStateTests::audit_nativeTyping(letters-1ms) Native receiver: expected=500 actual=500
+QINFO  : OSXKeyStateTests::audit_nativeTyping(letters-1ms) inject-to-Qt delivery ms: p50=7.856 p95=8.388 p99=9.815 max=20.506
+PASS   : OSXKeyStateTests::audit_nativeTyping(letters-1ms)
+QINFO  : OSXKeyStateTests::audit_nativeTyping(keypad-10ms) 500 down/up pairs, including requested gaps and event processing: 8338 ms
+QINFO  : OSXKeyStateTests::audit_nativeTyping(keypad-10ms) Native receiver: expected=500 actual=500
+QINFO  : OSXKeyStateTests::audit_nativeTyping(keypad-10ms) inject-to-Qt delivery ms: p50=10.342 p95=10.890 p99=12.367 max=14.738
+PASS   : OSXKeyStateTests::audit_nativeTyping(keypad-10ms)
+QINFO  : OSXKeyStateTests::audit_nativeTyping(keypad-1ms) 500 down/up pairs, including requested gaps and event processing: 4177 ms
+QINFO  : OSXKeyStateTests::audit_nativeTyping(keypad-1ms) Native receiver: expected=500 actual=500
+QINFO  : OSXKeyStateTests::audit_nativeTyping(keypad-1ms) inject-to-Qt delivery ms: p50=7.801 p95=8.305 p99=9.444 max=17.124
+PASS   : OSXKeyStateTests::audit_nativeTyping(keypad-1ms)
+PASS   : OSXKeyStateTests::cleanupTestCase()
+Totals: 6 passed, 0 failed, 0 skipped, 0 blacklisted, 27267ms
+********* Finished testing of OSXKeyStateTests *********

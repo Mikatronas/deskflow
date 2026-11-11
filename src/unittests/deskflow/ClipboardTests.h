@@ -14,6 +14,7 @@ class ClipboardTests : public QObject
 private Q_SLOTS:
   // Test are run in order top to bottom
   void initTestCase();
+  void auditMalformedFormatId();
   void basicFunction();
   void basicText();
   void longerText();

@@ -1,0 +1,61 @@
+Test project /Users/mikasvaitkevicius/Work/deskflow-custom/build/mac-audit/src/unittests
+      Start  1: ArchTests
+ 1/28 Test  #1: ArchTests ........................   Passed    0.04 sec
+      Start  2: ArchNetworkTests
+ 2/28 Test  #2: ArchNetworkTests .................   Passed    0.18 sec
+      Start  3: StringTests
+ 3/28 Test  #3: StringTests ......................   Passed    0.03 sec
+      Start  4: UnicodeTests
+ 4/28 Test  #4: UnicodeTests .....................   Passed    0.02 sec
+      Start  5: LogTests
+ 5/28 Test  #5: LogTests .........................   Passed    0.01 sec
+      Start  6: FileLogOutputterTests
+ 6/28 Test  #6: FileLogOutputterTests ............   Passed    0.02 sec
+      Start  7: BaseExceptionTests
+ 7/28 Test  #7: BaseExceptionTests ...............   Passed    0.01 sec
+      Start  8: EventQueueTests
+ 8/28 Test  #8: EventQueueTests ..................   Passed    0.01 sec
+      Start  9: ServerProxyTests
+ 9/28 Test  #9: ServerProxyTests .................   Passed    0.02 sec
+      Start 10: SettingsTests
+10/28 Test #10: SettingsTests ....................   Passed    0.05 sec
+      Start 11: LogLevelTests
+11/28 Test #11: LogLevelTests ....................   Passed    0.01 sec
+      Start 12: I18NTests
+12/28 Test #12: I18NTests ........................   Passed    0.02 sec
+      Start 13: KeySequenceTests
+13/28 Test #13: KeySequenceTests .................   Passed    0.01 sec
+      Start 14: ClipboardTests
+14/28 Test #14: ClipboardTests ...................   Passed    0.24 sec
+      Start 15: ClipboardChunksTests
+15/28 Test #15: ClipboardChunksTests .............   Passed    0.02 sec
+      Start 16: IKeyStateTests
+16/28 Test #16: IKeyStateTests ...................   Passed    0.02 sec
+      Start 17: KeyMapTests
+17/28 Test #17: KeyMapTests ......................   Passed    0.02 sec
+      Start 18: KeyStateTests
+18/28 Test #18: KeyStateTests ....................   Passed    0.20 sec
+      Start 19: KeyboardLayoutManagerTests
+19/28 Test #19: KeyboardLayoutManagerTests .......   Passed    0.02 sec
+      Start 20: LoggerTests
+20/28 Test #20: LoggerTests ......................   Passed    0.03 sec
+      Start 21: ComputerTests
+21/28 Test #21: ComputerTests ....................   Passed    0.03 sec
+      Start 22: NetworkMonitorTests
+22/28 Test #22: NetworkMonitorTests ..............   Passed    0.02 sec
+      Start 23: SecureUtilsTests
+23/28 Test #23: SecureUtilsTests .................   Passed    0.01 sec
+      Start 24: FingerprintTests
+24/28 Test #24: FingerprintTests .................   Passed    0.01 sec
+      Start 25: FingerprintDatabaseTests
+25/28 Test #25: FingerprintDatabaseTests .........   Passed    0.01 sec
+      Start 26: ServerConfigTests
+26/28 Test #26: ServerConfigTests ................   Passed    0.02 sec
+      Start 27: ServerTests
+27/28 Test #27: ServerTests ......................   Passed    0.02 sec
+      Start 28: ClientProxyTests
+28/28 Test #28: ClientProxyTests .................   Passed    0.02 sec
+
+100% tests passed out of 28
+
+Total Test time (real) =   1.10 sec

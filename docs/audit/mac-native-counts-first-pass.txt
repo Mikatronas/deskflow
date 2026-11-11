@@ -1,0 +1,17 @@
+********* Start testing of OSXKeyStateTests *********
+Config: Using QtTest library 6.12.0, Qt 6.12.0 (arm64-little_endian-lp64 shared (dynamic) release build; by Apple LLVM 21.0.0 (clang-2100.3.34.2)), macos 27.2.1
+PASS   : OSXKeyStateTests::initTestCase()
+FAIL!  : OSXKeyStateTests::audit_nativeTyping(letters-10ms) Receiver lost focus; input audit stopped
+   Loc: [/Users/mikasvaitkevicius/Work/deskflow-custom/src/unittests/platform/OSXKeyStateTests.cpp(178)]
+QINFO  : OSXKeyStateTests::audit_nativeTyping(letters-1ms) 500 down/up pairs, including requested gaps and event processing: 1233 ms
+QINFO  : OSXKeyStateTests::audit_nativeTyping(letters-1ms) Native receiver: expected=500 actual=500
+PASS   : OSXKeyStateTests::audit_nativeTyping(letters-1ms)
+QINFO  : OSXKeyStateTests::audit_nativeTyping(keypad-10ms) 500 down/up pairs, including requested gaps and event processing: 6329 ms
+QINFO  : OSXKeyStateTests::audit_nativeTyping(keypad-10ms) Native receiver: expected=500 actual=500
+PASS   : OSXKeyStateTests::audit_nativeTyping(keypad-10ms)
+QINFO  : OSXKeyStateTests::audit_nativeTyping(keypad-1ms) 500 down/up pairs, including requested gaps and event processing: 1223 ms
+QINFO  : OSXKeyStateTests::audit_nativeTyping(keypad-1ms) Native receiver: expected=500 actual=500
+PASS   : OSXKeyStateTests::audit_nativeTyping(keypad-1ms)
+PASS   : OSXKeyStateTests::cleanupTestCase()
+Totals: 5 passed, 1 failed, 0 skipped, 0 blacklisted, 12191ms
+********* Finished testing of OSXKeyStateTests *********

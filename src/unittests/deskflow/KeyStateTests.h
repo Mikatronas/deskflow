@@ -16,6 +16,9 @@ class KeyStateTests : public QObject
   Q_OBJECT
 private Q_SLOTS:
   void initTestCase();
+  void audit_100000Transitions();
+  void audit_scrollChunking();
+  void audit_hotkeyRollover();
   void keyDown();
   void keyUp();
   void invalidKey();

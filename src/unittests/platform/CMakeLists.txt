@@ -20,7 +20,7 @@ elseif(APPLE)
   create_test(
     NAME OSXKeyStateTests
     DEPENDS platform
-    LIBS base arch
+    LIBS base arch Qt::Widgets
     SOURCE OSXKeyStateTests.cpp
     WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/src/lib/platform"
   )

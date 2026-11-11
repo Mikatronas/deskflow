@@ -1,0 +1,15 @@
+********* Start testing of EiKeyStateTests *********
+Config: Using QtTest library 6.12.0, Qt 6.12.0 (x86_64-little_endian-lp64 shared (dynamic) release build; by GCC 16.2.1 20260810), omarchy 4.5.0
+PASS   : EiKeyStateTests::initTestCase()
+QINFO  : EiKeyStateTests::audit_baseIdentityWithShift() initial settings file: /home/mikas/.config/Deskflow/Deskflow.conf
+[2026-11-11T11:51:29.490] VERBOSE: mapped key: code=38 keysym=0x0061 to keyID=97
+[2026-11-11T11:51:29.490] VERBOSE: update key state: keyval=50 pressed=1
+[2026-11-11T11:51:29.490] VERBOSE: mapped key: code=38 keysym=0x0041 to keyID=65
+[2026-11-11T11:51:29.490] VERBOSE: update key state: keyval=50 pressed=0
+QINFO  : EiKeyStateTests::audit_baseIdentityWithShift() base=97 shifted=65
+XFAIL  : EiKeyStateTests::audit_baseIdentityWithShift() Audit: level count is passed as level index; fallback becomes modifier-dependent
+   Loc: [/home/mikas/Work/deskflow-custom/src/unittests/platform/EiKeyStateTests.cpp(149)]
+PASS   : EiKeyStateTests::audit_baseIdentityWithShift()
+PASS   : EiKeyStateTests::cleanupTestCase()
+Totals: 3 passed, 0 failed, 0 skipped, 0 blacklisted, 1ms
+********* Finished testing of EiKeyStateTests *********

@@ -1,0 +1,20 @@
+********* Start testing of ClipboardTests *********
+Config: Using QtTest library 6.12.0, Qt 6.12.0 (x86_64-little_endian-lp64 shared (dynamic) release build; by GCC 16.2.1 20260810), omarchy 4.5.0
+PASS   : ClipboardTests::initTestCase()
+SKIP   : ClipboardTests::auditMalformedFormatId() Malformed format audit is opt-in; use an isolated sanitizer build
+   Loc: [/home/mikas/Work/deskflow-custom/src/unittests/deskflow/ClipboardTests.cpp(237)]
+PASS   : ClipboardTests::basicFunction()
+[2026-11-11T11:57:15.068] DEBUG: skipping clipboard open, already open
+PASS   : ClipboardTests::basicText()
+QINFO  : ClipboardTests::longerText() "\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x01\x1F""Deskflow is Free and Open Source Software that lets you easily share your mouse and keyboard between multiple computers, where each computer has it's own display. No special hardware is required, all you need is a local area network. Deskflow is supported on Windows, Mac OS X and Linux."
+PASS   : ClipboardTests::longerText()
+PASS   : ClipboardTests::htmlText()
+PASS   : ClipboardTests::dualText()
+PASS   : ClipboardTests::marshalText()
+PASS   : ClipboardTests::unMarshalText()
+PASS   : ClipboardTests::unMarshalLongerText()
+PASS   : ClipboardTests::unMarshalTextAndHtml()
+PASS   : ClipboardTests::equalClipboards()
+PASS   : ClipboardTests::cleanupTestCase()
+Totals: 12 passed, 0 failed, 1 skipped, 0 blacklisted, 1ms
+********* Finished testing of ClipboardTests *********

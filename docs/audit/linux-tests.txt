@@ -1,0 +1,69 @@
+Test project /home/mikas/Work/deskflow-custom/build-audit/src/unittests
+      Start  1: ArchTests
+ 1/32 Test  #1: ArchTests ........................   Passed    0.02 sec
+      Start  2: ArchNetworkTests
+ 2/32 Test  #2: ArchNetworkTests .................   Passed    0.11 sec
+      Start  3: StringTests
+ 3/32 Test  #3: StringTests ......................   Passed    0.00 sec
+      Start  4: UnicodeTests
+ 4/32 Test  #4: UnicodeTests .....................   Passed    0.00 sec
+      Start  5: LogTests
+ 5/32 Test  #5: LogTests .........................   Passed    0.00 sec
+      Start  6: FileLogOutputterTests
+ 6/32 Test  #6: FileLogOutputterTests ............   Passed    0.00 sec
+      Start  7: BaseExceptionTests
+ 7/32 Test  #7: BaseExceptionTests ...............   Passed    0.00 sec
+      Start  8: EventQueueTests
+ 8/32 Test  #8: EventQueueTests ..................   Passed    0.00 sec
+      Start  9: ServerProxyTests
+ 9/32 Test  #9: ServerProxyTests .................   Passed    0.02 sec
+      Start 10: SettingsTests
+10/32 Test #10: SettingsTests ....................   Passed    1.23 sec
+      Start 11: LogLevelTests
+11/32 Test #11: LogLevelTests ....................   Passed    0.00 sec
+      Start 12: I18NTests
+12/32 Test #12: I18NTests ........................   Passed    0.12 sec
+      Start 13: KeySequenceTests
+13/32 Test #13: KeySequenceTests .................   Passed    0.00 sec
+      Start 14: ClipboardTests
+14/32 Test #14: ClipboardTests ...................   Passed    0.02 sec
+      Start 15: ClipboardChunksTests
+15/32 Test #15: ClipboardChunksTests .............   Passed    0.02 sec
+      Start 16: IKeyStateTests
+16/32 Test #16: IKeyStateTests ...................   Passed    0.02 sec
+      Start 17: KeyMapTests
+17/32 Test #17: KeyMapTests ......................   Passed    0.02 sec
+      Start 18: KeyStateTests
+18/32 Test #18: KeyStateTests ....................   Passed    0.03 sec
+      Start 19: KeyboardLayoutManagerTests
+19/32 Test #19: KeyboardLayoutManagerTests .......   Passed    0.02 sec
+      Start 20: XkbLayoutParserTests
+20/32 Test #20: XkbLayoutParserTests .............   Passed    0.02 sec
+      Start 21: LoggerTests
+21/32 Test #21: LoggerTests ......................   Passed    0.07 sec
+      Start 22: ComputerTests
+22/32 Test #22: ComputerTests ....................   Passed    0.21 sec
+      Start 23: NetworkMonitorTests
+23/32 Test #23: NetworkMonitorTests ..............   Passed    0.04 sec
+      Start 24: SecureUtilsTests
+24/32 Test #24: SecureUtilsTests .................   Passed    0.00 sec
+      Start 25: FingerprintTests
+25/32 Test #25: FingerprintTests .................   Passed    0.00 sec
+      Start 26: FingerprintDatabaseTests
+26/32 Test #26: FingerprintDatabaseTests .........   Passed    0.00 sec
+      Start 27: EiHotKeyModifierMatchingTests
+27/32 Test #27: EiHotKeyModifierMatchingTests ....   Passed    0.02 sec
+      Start 28: EiKeyStateTests
+28/32 Test #28: EiKeyStateTests ..................   Passed    0.02 sec
+      Start 29: XWindowsClipboardTests
+29/32 Test #29: XWindowsClipboardTests ...........   Passed    0.02 sec
+      Start 30: ServerConfigTests
+30/32 Test #30: ServerConfigTests ................   Passed    0.02 sec
+      Start 31: ServerTests
+31/32 Test #31: ServerTests ......................   Passed    0.02 sec
+      Start 32: ClientProxyTests
+32/32 Test #32: ClientProxyTests .................   Passed    0.02 sec
+
+100% tests passed out of 32
+
+Total Test time (real) =   2.11 sec

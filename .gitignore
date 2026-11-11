@@ -49,3 +49,6 @@ CMakeFiles/*
 # Ai helperfilers
 **/[cC]laude.[mM][dD]
 **/CLAUDE.[mM][dD]
+
+# Separate optimized audit build
+/build-audit

@@ -15,6 +15,8 @@ class OSXKeyStateTests : public QObject
   Q_OBJECT
 private Q_SLOTS:
   void initTestCase();
+  void audit_nativeTyping_data();
+  void audit_nativeTyping();
   // Test are run in order top to bottom
   void mapModifiersFromOSX_OSXMask();
   void fakePollShift();

@@ -134,4 +134,19 @@ void EiKeyStateTests::updateLockedModifiers_compositorLockState_numLockFollowsCo
   QVERIFY((keyState.pollActiveModifiers() & KeyModifierNumLock) == 0);
 }
 
+// Audit reproducer: the documented base-level lookup must ignore Shift.
+void EiKeyStateTests::audit_baseIdentityWithShift()
+{
+  TestAppUtil appUtil;
+  EventQueue events;
+  deskflow::EiKeyState state(nullptr, &events);
+  const auto plain = state.mapKeyFromKeyval(38); // evdev A + XKB offset
+  state.updateXkbState(50, true);                // left Shift
+  const auto shifted = state.mapKeyFromKeyval(38);
+  state.updateXkbState(50, false);
+  qInfo("base=%u shifted=%u", plain, shifted);
+  QEXPECT_FAIL("", "Audit: level count is passed as level index; fallback becomes modifier-dependent", Continue);
+  QCOMPARE(shifted, plain);
+}
+
 QTEST_MAIN(EiKeyStateTests)

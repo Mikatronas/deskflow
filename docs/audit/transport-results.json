@@ -1,0 +1,29 @@
+{
+  "kind": "direct LAN TCP_NODELAY Python echo RTT; no TLS or Deskflow",
+  "results": [
+    {
+      "bytes": 16,
+      "samples": 1000,
+      "p50_ms": 0.092164,
+      "p95_ms": 0.108996,
+      "p99_ms": 0.118634,
+      "max_ms": 0.573163
+    },
+    {
+      "bytes": 256,
+      "samples": 1000,
+      "p50_ms": 0.092464,
+      "p95_ms": 0.103746,
+      "p99_ms": 0.116701,
+      "max_ms": 1.020298
+    },
+    {
+      "bytes": 4096,
+      "samples": 1000,
+      "p50_ms": 0.185541,
+      "p95_ms": 0.199036,
+      "p99_ms": 0.205448,
+      "max_ms": 1.072436
+    }
+  ]
+}

@@ -14,6 +14,9 @@
 #include "MockKeyMap.h"
 #include "MockKeyState.h"
 
+#include "deskflow/ISecondaryComputer.h"
+#include <QElapsedTimer>
+#include <QTemporaryDir>
 #include <algorithm>
 
 namespace {
@@ -251,6 +254,88 @@ void KeyStateTests::fakeKeyDown_langSyncDisabled_keepsLocalGroup()
   QCOMPARE(keyState.countStrokes(deskflow::KeyMap::Keystroke::KeyType::Group), 0);
   QVERIFY(keyState.countStrokes(deskflow::KeyMap::Keystroke::KeyType::Button) > 0);
   QCOMPARE(keyState.m_faked.front().m_data.m_button.m_button, kSharedButton);
+}
+
+void KeyStateTests::audit_100000Transitions()
+{
+  deskflow::KeyMap map;
+  buildTwoGroupKeyMap(map, kLatinA, kThaiFoFan, kSharedButton);
+  EventQueue events;
+  RecordingKeyState state(&events, map, {"en", "th"}, false);
+  state.m_faked.reserve(100000);
+  QElapsedTimer timer;
+  timer.start();
+  for (int i = 0; i < 50000; ++i) {
+    state.fakeKeyDown(kLatinA, 0, kSharedButton, "en");
+    QVERIFY(state.fakeKeyUp(kSharedButton));
+  }
+  qInfo("100000 mapped transitions: %lld ns (recording backend, not OS injection)", timer.nsecsElapsed());
+  QCOMPARE(state.countStrokes(deskflow::KeyMap::Keystroke::KeyType::Button), 100000);
+  for (size_t i = 0; i < state.m_faked.size(); ++i) {
+    QCOMPARE(state.m_faked[i].m_data.m_button.m_press, i % 2 == 0);
+  }
+}
+
+void KeyStateTests::audit_scrollChunking()
+{
+  class Sink : public ISecondaryComputer
+  {
+  public:
+    void fakeMouseButton(ButtonID, bool) override
+    {
+    }
+    void fakeMouseMove(int32_t, int32_t) override
+    {
+    }
+    void fakeMouseRelativeMove(int32_t, int32_t) const override
+    {
+    }
+    void fakeMouseWheel(ScrollDelta) const override
+    {
+    }
+  };
+  QTemporaryDir dir;
+  QVERIFY(dir.isValid());
+  const auto previous = Settings::settingsFile();
+  Settings::setSettingsFile(dir.filePath("audit.ini"));
+  Settings::setValue(Settings::Client::YScrollScale, 0.25);
+  Settings::setValue(Settings::Client::InvertYScroll, false);
+  Sink sink;
+  int individual = 0;
+  for (int i = 0; i < 1000; ++i)
+    individual += sink.applyScrollModifier({0, 1}).y;
+  const auto grouped = sink.applyScrollModifier({0, 1000}).y;
+  const auto installedNotch = sink.applyScrollModifier({0, 3}).y;
+  Settings::setSettingsFile(previous);
+  qInfo(
+      "1000 single-line events=%d; one 1000-line event=%d; installed 3-line notch=%d", individual, grouped,
+      installedNotch
+  );
+  QEXPECT_FAIL("", "Audit: fractional scaling discards per-event remainder", Continue);
+  QCOMPARE(individual, grouped);
+}
+
+void KeyStateTests::audit_hotkeyRollover()
+{
+  deskflow::KeyMap map;
+  for (int i = 1; i <= 2; ++i) {
+    deskflow::KeyMap::KeyItem item;
+    item.m_id = '0' + i;
+    item.m_button = i;
+    map.addKeyEntry(item);
+  }
+  map.finish();
+  EventQueue events;
+  RecordingKeyState state(&events, map, {"en"}, false);
+  // ConfigReadContext::parseKeystroke assigns server button 0 to every action.
+  state.fakeKeyDown('1', 0, 0, "en");
+  state.fakeKeyDown('2', 0, 0, "en");
+  const bool firstRelease = state.fakeKeyUp(0);
+  const bool secondRelease = state.fakeKeyUp(0);
+  qInfo("overlapping synthetic keys: releases=%d,%d", firstRelease, secondRelease);
+  QVERIFY(firstRelease);
+  QEXPECT_FAIL("", "Audit: configured keystrokes share server button zero and collide during rollover", Continue);
+  QVERIFY(secondRelease);
 }
 
 QTEST_MAIN(KeyStateTests)

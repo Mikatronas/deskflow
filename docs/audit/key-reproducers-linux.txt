@@ -1,0 +1,21 @@
+********* Start testing of KeyStateTests *********
+Config: Using QtTest library 6.12.0, Qt 6.12.0 (x86_64-little_endian-lp64 shared (dynamic) release build; by GCC 16.2.1 20260810), omarchy 4.5.0
+PASS   : KeyStateTests::initTestCase()
+QINFO  : KeyStateTests::audit_hotkeyRollover() overlapping synthetic keys: releases=1,0
+XFAIL  : KeyStateTests::audit_hotkeyRollover() Audit: configured keystrokes share server button zero and collide during rollover
+   Loc: [/home/mikas/Work/deskflow-custom/src/unittests/deskflow/KeyStateTests.cpp(326)]
+PASS   : KeyStateTests::audit_hotkeyRollover()
+QINFO  : KeyStateTests::audit_100000Transitions() 100000 mapped transitions: 6036685 ns (recording backend, not OS injection)
+PASS   : KeyStateTests::audit_100000Transitions()
+QINFO  : KeyStateTests::audit_scrollChunking() initial settings file: /home/mikas/.config/Deskflow/Deskflow.conf
+QINFO  : KeyStateTests::audit_scrollChunking() settings file changed: /tmp/KeyStateTests-LyPTXO/audit.ini
+QDEBUG : KeyStateTests::audit_scrollChunking() "Setting are now writable"
+QINFO  : KeyStateTests::audit_scrollChunking() settings file changed: /home/mikas/.config/Deskflow/Deskflow.conf
+QDEBUG : KeyStateTests::audit_scrollChunking() "Setting are now readonly"
+QINFO  : KeyStateTests::audit_scrollChunking() 1000 single-line events=0; one 1000-line event=250; installed 3-line notch=0
+XFAIL  : KeyStateTests::audit_scrollChunking() Audit: fractional scaling discards per-event remainder
+   Loc: [/home/mikas/Work/deskflow-custom/src/unittests/deskflow/KeyStateTests.cpp(303)]
+PASS   : KeyStateTests::audit_scrollChunking()
+PASS   : KeyStateTests::cleanupTestCase()
+Totals: 5 passed, 0 failed, 0 skipped, 0 blacklisted, 8ms
+********* Finished testing of KeyStateTests *********

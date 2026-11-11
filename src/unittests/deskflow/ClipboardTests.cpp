@@ -230,4 +230,14 @@ void ClipboardTests::equalClipboards()
   clipboard2.close();
 }
 
+// Deliberately malformed peer input. Run only in an isolated sanitizer process.
+void ClipboardTests::auditMalformedFormatId()
+{
+  if (!qEnvironmentVariableIsSet("DESKFLOW_AUDIT_MALFORMED"))
+    QSKIP("Malformed format audit is opt-in; use an isolated sanitizer build");
+  const unsigned char bytes[] = {0, 0, 0, 1, 255, 255, 255, 255, 0, 0, 0, 0};
+  Clipboard clipboard;
+  clipboard.unmarshall(std::string(reinterpret_cast<const char *>(bytes), sizeof(bytes)), 0);
+}
+
 QTEST_MAIN(ClipboardTests)
