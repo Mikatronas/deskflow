@@ -2,70 +2,70 @@ Test project /home/mikas/Work/deskflow-custom/build-audit/src/unittests
       Start  1: ArchTests
  1/33 Test  #1: ArchTests ........................   Passed    0.02 sec
       Start  2: ArchNetworkTests
- 2/33 Test  #2: ArchNetworkTests .................   Passed    0.12 sec
+ 2/33 Test  #2: ArchNetworkTests .................   Passed    0.11 sec
       Start  3: StringTests
- 3/33 Test  #3: StringTests ......................   Passed    0.00 sec
+ 3/33 Test  #3: StringTests ......................   Passed    0.01 sec
       Start  4: UnicodeTests
  4/33 Test  #4: UnicodeTests .....................   Passed    0.00 sec
       Start  5: LogTests
- 5/33 Test  #5: LogTests .........................   Passed    0.01 sec
+ 5/33 Test  #5: LogTests .........................   Passed    0.00 sec
       Start  6: FileLogOutputterTests
- 6/33 Test  #6: FileLogOutputterTests ............   Passed    0.01 sec
+ 6/33 Test  #6: FileLogOutputterTests ............   Passed    0.00 sec
       Start  7: BaseExceptionTests
  7/33 Test  #7: BaseExceptionTests ...............   Passed    0.00 sec
       Start  8: EventQueueTests
- 8/33 Test  #8: EventQueueTests ..................   Passed    0.01 sec
+ 8/33 Test  #8: EventQueueTests ..................   Passed    0.00 sec
       Start  9: ServerProxyTests
- 9/33 Test  #9: ServerProxyTests .................   Passed    0.03 sec
+ 9/33 Test  #9: ServerProxyTests .................   Passed    0.02 sec
       Start 10: SettingsTests
-10/33 Test #10: SettingsTests ....................   Passed    1.32 sec
+10/33 Test #10: SettingsTests ....................   Passed    1.51 sec
       Start 11: LogLevelTests
 11/33 Test #11: LogLevelTests ....................   Passed    0.00 sec
       Start 12: I18NTests
-12/33 Test #12: I18NTests ........................   Passed    0.13 sec
+12/33 Test #12: I18NTests ........................   Passed    0.14 sec
       Start 13: KeySequenceTests
-13/33 Test #13: KeySequenceTests .................   Passed    0.01 sec
+13/33 Test #13: KeySequenceTests .................   Passed    0.00 sec
       Start 14: ClipboardTests
-14/33 Test #14: ClipboardTests ...................   Passed    0.03 sec
+14/33 Test #14: ClipboardTests ...................   Passed    0.02 sec
       Start 15: ClipboardChunksTests
-15/33 Test #15: ClipboardChunksTests .............   Passed    0.03 sec
+15/33 Test #15: ClipboardChunksTests .............   Passed    0.02 sec
       Start 16: IKeyStateTests
-16/33 Test #16: IKeyStateTests ...................   Passed    0.03 sec
+16/33 Test #16: IKeyStateTests ...................   Passed    0.02 sec
       Start 17: KeyMapTests
-17/33 Test #17: KeyMapTests ......................   Passed    0.03 sec
+17/33 Test #17: KeyMapTests ......................   Passed    0.02 sec
       Start 18: KeyStateTests
-18/33 Test #18: KeyStateTests ....................   Passed    0.05 sec
+18/33 Test #18: KeyStateTests ....................   Passed    0.03 sec
       Start 19: KeyboardLayoutManagerTests
-19/33 Test #19: KeyboardLayoutManagerTests .......   Passed    0.03 sec
+19/33 Test #19: KeyboardLayoutManagerTests .......   Passed    0.02 sec
       Start 20: XkbLayoutParserTests
-20/33 Test #20: XkbLayoutParserTests .............   Passed    0.04 sec
+20/33 Test #20: XkbLayoutParserTests .............   Passed    0.02 sec
       Start 21: LoggerTests
-21/33 Test #21: LoggerTests ......................   Passed    0.09 sec
+21/33 Test #21: LoggerTests ......................   Passed    0.07 sec
       Start 22: ComputerTests
 22/33 Test #22: ComputerTests ....................   Passed    0.26 sec
       Start 23: NetworkMonitorTests
-23/33 Test #23: NetworkMonitorTests ..............   Passed    0.08 sec
+23/33 Test #23: NetworkMonitorTests ..............   Passed    0.05 sec
       Start 24: SecureUtilsTests
-24/33 Test #24: SecureUtilsTests .................   Passed    0.01 sec
+24/33 Test #24: SecureUtilsTests .................   Passed    0.00 sec
       Start 25: FingerprintTests
-25/33 Test #25: FingerprintTests .................   Passed    0.01 sec
+25/33 Test #25: FingerprintTests .................   Passed    0.00 sec
       Start 26: FingerprintDatabaseTests
-26/33 Test #26: FingerprintDatabaseTests .........   Passed    0.01 sec
+26/33 Test #26: FingerprintDatabaseTests .........   Passed    0.00 sec
       Start 27: WaylandClipboardTests
-27/33 Test #27: WaylandClipboardTests ............   Passed    0.07 sec
+27/33 Test #27: WaylandClipboardTests ............   Passed    0.04 sec
       Start 28: EiHotKeyModifierMatchingTests
-28/33 Test #28: EiHotKeyModifierMatchingTests ....   Passed    0.03 sec
+28/33 Test #28: EiHotKeyModifierMatchingTests ....   Passed    0.02 sec
       Start 29: EiKeyStateTests
-29/33 Test #29: EiKeyStateTests ..................   Passed    0.04 sec
+29/33 Test #29: EiKeyStateTests ..................   Passed    0.02 sec
       Start 30: XWindowsClipboardTests
-30/33 Test #30: XWindowsClipboardTests ...........   Passed    0.03 sec
+30/33 Test #30: XWindowsClipboardTests ...........   Passed    0.02 sec
       Start 31: ServerConfigTests
-31/33 Test #31: ServerConfigTests ................   Passed    0.03 sec
+31/33 Test #31: ServerConfigTests ................   Passed    0.02 sec
       Start 32: ServerTests
-32/33 Test #32: ServerTests ......................   Passed    0.03 sec
+32/33 Test #32: ServerTests ......................   Passed    0.02 sec
       Start 33: ClientProxyTests
-33/33 Test #33: ClientProxyTests .................   Passed    0.03 sec
+33/33 Test #33: ClientProxyTests .................   Passed    0.02 sec
 
 100% tests passed out of 33
 
-Total Test time (real) =   2.65 sec
+Total Test time (real) =   2.55 sec

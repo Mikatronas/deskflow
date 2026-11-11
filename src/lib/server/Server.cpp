@@ -1173,13 +1173,9 @@ void Server::handleClipboardGrabbed(const Event &event, BaseClientProxy *grabber
   }
   const auto *info = static_cast<const IComputer::ClipboardInfo *>(event.getData());
 
-  // ignore grab if sequence number is old.  always allow primary
-  // computer to grab.
+  // Clipboard ownership is ordered by this event queue, not cursor-entry epochs.
+  // An inactive peer legitimately has an older screen sequence than the primary.
   ClipboardInfo &clipboard = m_clipboards[info->m_id];
-  if (grabber != m_primaryClient && info->m_sequenceNumber < clipboard.m_clipboardSeqNum) {
-    LOG_DEBUG("ignored computer \"%s\" grab of clipboard %d", getName(grabber).c_str(), info->m_id);
-    return;
-  }
 
   // mark computer as owning clipboard
   LOG_DEBUG(
@@ -1441,8 +1437,8 @@ void Server::onClipboardChanged(const BaseClientProxy *sender, ClipboardID id, u
 {
   ClipboardInfo &clipboard = m_clipboards[id];
 
-  // ignore update if sequence number is old
-  if (seqNum < clipboard.m_clipboardSeqNum) {
+  // Data must match the accepted grab, regardless of other peers' cursor epochs.
+  if (seqNum != clipboard.m_clipboardSeqNum) {
     LOG_INFO("ignored computer \"%s\" update of clipboard %d (mis-sequenced)", getName(sender).c_str(), id);
     return;
   }

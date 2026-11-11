@@ -1,0 +1,7 @@
+PASS Linux to Mac Unicode: 60 bytes, observed within 53.7 ms
+PASS Mac to Linux Unicode: 60 bytes, observed within 103.8 ms
+PASS Linux to Mac 0: 0 bytes, observed within 42.5 ms
+PASS Mac to Linux 7: 7 bytes, observed within 154.2 ms
+PASS Linux to Mac 1048576: 1048576 bytes, observed within 57.2 ms
+PASS Mac to Linux 1048583: 1048583 bytes, observed within 105.5 ms
+PASS private MIME sentinel excluded

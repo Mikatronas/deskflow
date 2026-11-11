@@ -26,3 +26,21 @@ Raw final evidence: `linux-fixes-tests.txt`, `mac-mixed-fixes.txt`, and `wayland
 ## Remaining acceptance limits
 
 Hardware scroll feel across applications still needs user acceptance. Long sleep/wake/network soaks, full decoder fuzzing and dependency-wide security review are not covered. The native Wayland backend currently targets the first advertised seat and requires wlr-data-control; systems without it retain the portal path. Clipboard ownership uses Deskflow's existing ordered connection and server arbitration, not a new persistent delivery-acknowledgement protocol. Maximum-size bulk transfers still share the input transport; no universal input-latency guarantee is claimed.
+
+## Live rollout and follow-up
+
+Both machines now run the custom code. Linux binaries are in `~/.local/lib/deskflow-custom`, selected by the existing desktop launcher ID via a user desktop-file override. The Mac has `~/Applications/Deskflow Custom.app`; the existing `local.deskflow.client` LaunchAgent points to its core. Original Mac app and configuration backups are retained in `~/Work/deskflow-rollout-2026-11-11` on each machine. The Mac bundle uses the installed Homebrew Qt plugins matching the build. Its local-network permission was allowed and the user authenticated the Accessibility grant. The old SSH clipboard service is disabled; the log-driven cursor helper's LaunchAgent is moved to the backup directory.
+
+The live clipboard probe found a further correctness issue in the new immediate-sync behavior: the original server compares clipboard ownership against cursor-entry sequence numbers. An inactive peer's cursor sequence can be older than the primary's, so otherwise valid Mac-to-Linux clipboard updates were rejected. Clipboard grabs are now ordered by the server's event queue; data must match the accepted owner's grab sequence. The subsequent live bidirectional tests pass without moving the pointer. The complete 33-suite Linux test run passes after this correction.
+
+`live-clipboard-fixes.txt` records successful Unicode/multiline, empty, 1 MiB and private-MIME tests. Observation times were roughly 43–154 ms, including SSH command startup and probe polling; these are not isolated network or input latency measurements. The legacy Mac converter emits CR line endings, so the text probe explicitly normalizes CR/CRLF to LF for comparison.
+
+Live image checks also pass: Linux-generated 4×4 red PNG pixels are exact in the Mac BMP representation, and a native Mac-generated 4×4 blue image reaches Linux with exact RGBA pixels. Display color management can change rendered/converted color values; the test compares raw clipboard pixels. The Mac fixture helper is retained as `tools/audit/probe_live_image.swift`.
+
+During the controlled server restart the Mac retried at one-second intervals and reconnected automatically once the listener returned. The user tried physical typing/scrolling and reported that it “seems better.” This is acceptance feedback, not a measured long-running hardware stress result.
+
+### Rollback
+
+The backed-up `server-layout.conf` retains the old keypad rules. The original Mac app remains at `/Applications/Deskflow.app`. Restore the saved Mac `local.deskflow.client.plist` and settings, then reload that LaunchAgent to revert the client. Restore the Linux settings and remove/restore the user desktop override to return to `/usr/bin/deskflow`. Only re-enable `mac-clipboard.service` and the saved cursor-helper LaunchAgent when reverting to that old setup; running them alongside the integrated replacements can cause conflicts.
+
+The custom Mac app is locally ad-hoc signed. Future binary updates may require macOS permission reapproval; this rollout does not install a new trusted signing certificate.
