@@ -1,0 +1,46 @@
+PASS   : OSXKeyStateTests::initTestCase()
+QINFO  : OSXKeyStateTests::audit_nativeScroll() wheel QPoint(0,4) Qt::ScrollBegin
+QINFO  : OSXKeyStateTests::audit_nativeScroll() wheel QPoint(0,5) Qt::ScrollUpdate
+QINFO  : OSXKeyStateTests::audit_nativeScroll() wheel QPoint(0,5) Qt::ScrollUpdate
+QINFO  : OSXKeyStateTests::audit_nativeScroll() wheel QPoint(0,6) Qt::ScrollUpdate
+QINFO  : OSXKeyStateTests::audit_nativeScroll() wheel QPoint(0,6) Qt::ScrollUpdate
+QINFO  : OSXKeyStateTests::audit_nativeScroll() wheel QPoint(0,5) Qt::ScrollUpdate
+QINFO  : OSXKeyStateTests::audit_nativeScroll() wheel QPoint(0,4) Qt::ScrollUpdate
+QINFO  : OSXKeyStateTests::audit_nativeScroll() wheel QPoint(0,4) Qt::ScrollUpdate
+QINFO  : OSXKeyStateTests::audit_nativeScroll() wheel QPoint(0,3) Qt::ScrollUpdate
+QINFO  : OSXKeyStateTests::audit_nativeScroll() wheel QPoint(0,2) Qt::ScrollUpdate
+QINFO  : OSXKeyStateTests::audit_nativeScroll() wheel QPoint(0,1) Qt::ScrollUpdate
+QINFO  : OSXKeyStateTests::audit_nativeScroll() wheel QPoint(0,0) Qt::ScrollEnd
+QINFO  : OSXKeyStateTests::audit_nativeScroll() wheel QPoint(0,0) Qt::ScrollEnd
+QINFO  : OSXKeyStateTests::audit_nativeScroll() Native scroll pixels/frames/end: 45 11 2
+QINFO  : OSXKeyStateTests::audit_nativeScroll() wheel QPoint(0,-4) Qt::ScrollBegin
+QINFO  : OSXKeyStateTests::audit_nativeScroll() wheel QPoint(0,-6) Qt::ScrollUpdate
+QINFO  : OSXKeyStateTests::audit_nativeScroll() wheel QPoint(0,-11) Qt::ScrollUpdate
+QINFO  : OSXKeyStateTests::audit_nativeScroll() wheel QPoint(0,-13) Qt::ScrollUpdate
+QINFO  : OSXKeyStateTests::audit_nativeScroll() wheel QPoint(0,-16) Qt::ScrollUpdate
+QINFO  : OSXKeyStateTests::audit_nativeScroll() wheel QPoint(0,-20) Qt::ScrollUpdate
+QINFO  : OSXKeyStateTests::audit_nativeScroll() wheel QPoint(0,-22) Qt::ScrollUpdate
+QINFO  : OSXKeyStateTests::audit_nativeScroll() wheel QPoint(0,-25) Qt::ScrollUpdate
+QINFO  : OSXKeyStateTests::audit_nativeScroll() wheel QPoint(0,-25) Qt::ScrollUpdate
+QINFO  : OSXKeyStateTests::audit_nativeScroll() wheel QPoint(0,-26) Qt::ScrollUpdate
+QINFO  : OSXKeyStateTests::audit_nativeScroll() wheel QPoint(0,-27) Qt::ScrollUpdate
+QINFO  : OSXKeyStateTests::audit_nativeScroll() wheel QPoint(0,-25) Qt::ScrollUpdate
+QINFO  : OSXKeyStateTests::audit_nativeScroll() wheel QPoint(0,-27) Qt::ScrollUpdate
+QINFO  : OSXKeyStateTests::audit_nativeScroll() wheel QPoint(0,-26) Qt::ScrollUpdate
+QINFO  : OSXKeyStateTests::audit_nativeScroll() wheel QPoint(0,-27) Qt::ScrollUpdate
+QINFO  : OSXKeyStateTests::audit_nativeScroll() wheel QPoint(0,-26) Qt::ScrollUpdate
+QINFO  : OSXKeyStateTests::audit_nativeScroll() wheel QPoint(0,-25) Qt::ScrollUpdate
+QINFO  : OSXKeyStateTests::audit_nativeScroll() wheel QPoint(0,-23) Qt::ScrollUpdate
+QINFO  : OSXKeyStateTests::audit_nativeScroll() wheel QPoint(0,-20) Qt::ScrollUpdate
+QINFO  : OSXKeyStateTests::audit_nativeScroll() wheel QPoint(0,-17) Qt::ScrollUpdate
+QINFO  : OSXKeyStateTests::audit_nativeScroll() wheel QPoint(0,-13) Qt::ScrollUpdate
+QINFO  : OSXKeyStateTests::audit_nativeScroll() wheel QPoint(0,-11) Qt::ScrollUpdate
+QINFO  : OSXKeyStateTests::audit_nativeScroll() wheel QPoint(0,-7) Qt::ScrollUpdate
+QINFO  : OSXKeyStateTests::audit_nativeScroll() wheel QPoint(0,-4) Qt::ScrollUpdate
+QINFO  : OSXKeyStateTests::audit_nativeScroll() wheel QPoint(0,-3) Qt::ScrollUpdate
+QINFO  : OSXKeyStateTests::audit_nativeScroll() wheel QPoint(0,-1) Qt::ScrollUpdate
+QINFO  : OSXKeyStateTests::audit_nativeScroll() wheel QPoint(0,0) Qt::ScrollEnd
+QINFO  : OSXKeyStateTests::audit_nativeScroll() wheel QPoint(0,0) Qt::ScrollEnd
+PASS   : OSXKeyStateTests::audit_nativeScroll()
+PASS   : OSXKeyStateTests::cleanupTestCase()
+Totals: 3 passed, 0 failed, 0 skipped, 0 blacklisted, 1189ms

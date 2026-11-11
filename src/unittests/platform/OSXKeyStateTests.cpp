@@ -263,7 +263,7 @@ void OSXKeyStateTests::audit_nativeScroll()
   const auto oldSettings = Settings::settingsFile();
   Settings::setSettingsFile(settingsDir.filePath("scroll.ini"));
   auto restoreSettings = qScopeGuard([&] { Settings::setSettingsFile(oldSettings); });
-  Settings::setValue(Settings::Client::YScrollScale, 1.0);
+  Settings::setValue(Settings::Client::YScrollScale, 1.5);
   OSXComputer computer(&events, false);
 
   auto pump = [&](int milliseconds) {
@@ -293,7 +293,7 @@ void OSXKeyStateTests::audit_nativeScroll()
   computer.fakeMouseWheel({0, 120});
   pump(250);
   qInfo() << "Native scroll pixels/frames/end:" << receiver.pixels << receiver.frames << receiver.ended;
-  QCOMPARE(receiver.pixels, 30);
+  QCOMPARE(receiver.pixels, 45);
   QVERIFY(receiver.frames >= 6);
   QVERIFY(receiver.ended >= 1);
   receiver.pixels = receiver.frames = receiver.ended = 0;
@@ -302,7 +302,7 @@ void OSXKeyStateTests::audit_nativeScroll()
     pump(15);
   }
   pump(250);
-  QCOMPARE(receiver.pixels, -300);
+  QCOMPARE(receiver.pixels, -450);
   QVERIFY(receiver.frames >= 15);
   QVERIFY(receiver.ended >= 1);
 }

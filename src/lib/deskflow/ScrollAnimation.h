@@ -52,7 +52,9 @@ public:
   {
     for (auto &i : m_impulses) {
       const auto t = std::clamp((now - i.start) / 0.100, 0.0, 1.0);
-      const auto progress = 1.0 - (1.0 - t) * (1.0 - t); // responsive ease-out
+      // Gentle acceleration spreads the initial kick across several frames,
+      // while retaining immediate response and zero speed at the end.
+      const auto progress = t + t * t - t * t * t;
       m_x += i.x * (progress - i.progress);
       m_y += i.y * (progress - i.progress);
       i.progress = progress;

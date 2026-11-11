@@ -353,9 +353,12 @@ void KeyStateTests::smoothWheelAnimation()
 {
   ScrollAnimation animation;
   animation.add({-30, 30}, 0);
-  int x = 0, y = 0, frames = 0;
+  int x = 0, y = 0, frames = 0, peak = 0;
   for (int i = 1; i <= 13; ++i) {
     auto delta = animation.step(i / 120.0);
+    if (i == 1)
+      QVERIFY(delta.y > 0 && delta.y <= 3);
+    peak = std::max(peak, delta.y);
     x += delta.x;
     y += delta.y;
     if (delta.y)
@@ -363,7 +366,8 @@ void KeyStateTests::smoothWheelAnimation()
   }
   QCOMPARE(x, -30);
   QCOMPARE(y, 30);
-  QVERIFY(frames >= 8);
+  QVERIFY(frames >= 11);
+  QVERIFY(peak <= 4);
   QVERIFY(!animation.active());
   animation.add({0, 30}, 1);
   QVERIFY(animation.step(1.02).y > 0);
