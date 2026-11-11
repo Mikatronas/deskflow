@@ -152,6 +152,19 @@ elseif(UNIX)
   endif()
 
   if(LIBEI_FOUND)
+    pkg_check_modules(WAYLAND_CLIENT REQUIRED wayland-client)
+    find_program(WAYLAND_SCANNER wayland-scanner REQUIRED)
+    set(DATA_CONTROL_XML "${CMAKE_CURRENT_SOURCE_DIR}/protocols/wlr-data-control-unstable-v1.xml")
+    add_custom_command(OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/wlr-data-control-client.h"
+      COMMAND ${WAYLAND_SCANNER} client-header ${DATA_CONTROL_XML} "${CMAKE_CURRENT_BINARY_DIR}/wlr-data-control-client.h"
+      DEPENDS ${DATA_CONTROL_XML})
+    add_custom_command(OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/wlr-data-control-protocol.c"
+      COMMAND ${WAYLAND_SCANNER} private-code ${DATA_CONTROL_XML} "${CMAKE_CURRENT_BINARY_DIR}/wlr-data-control-protocol.c"
+      DEPENDS ${DATA_CONTROL_XML})
+    list(APPEND PLATFORM_SOURCES
+      WaylandClipboard.cpp WaylandClipboard.h
+      "${CMAKE_CURRENT_BINARY_DIR}/wlr-data-control-client.h"
+      "${CMAKE_CURRENT_BINARY_DIR}/wlr-data-control-protocol.c")
     list(APPEND PLATFORM_SOURCES
       EiClipboard.cpp
       EiClipboard.h
@@ -213,6 +226,8 @@ if(UNIX)
     endif()
     target_include_directories(platform
       PUBLIC
+        ${CMAKE_CURRENT_BINARY_DIR}
+        ${WAYLAND_CLIENT_INCLUDE_DIRS}
         ${LIBEI_INCLUDE_DIRS}
         ${LIBPORTAL_INCLUDE_DIRS}
         ${LIBXKBCOMMON_INCLUDE_DIRS}
@@ -225,6 +240,7 @@ if(UNIX)
       PRIVATE
         Qt6::Gui
         ${LIBXKBCOMMON_LINK_LIBRARIES}
+        ${WAYLAND_CLIENT_LINK_LIBRARIES}
         ${LIBEI_LINK_LIBRARIES} ${LIBPORTAL_LINK_LIBRARIES}
       )
   endif()

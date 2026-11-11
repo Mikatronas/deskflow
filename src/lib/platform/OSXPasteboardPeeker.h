@@ -14,6 +14,8 @@ extern "C"
 #endif
 
   CFStringRef getDraggedFileURL();
+  bool isClipboardPrivate();
+  int64_t clipboardGeneration();
 
 #if defined(__cplusplus)
 }

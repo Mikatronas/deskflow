@@ -9,6 +9,7 @@
 #include "OSXKeyStateTests.h"
 
 #include "base/EventQueue.h"
+#include "deskflow/KeypadPolicy.h"
 #include "deskflow/unix/AppUtilUnix.h"
 #include <ApplicationServices/ApplicationServices.h>
 #include <QApplication>
@@ -16,6 +17,7 @@
 #include <QEventLoop>
 #include <QKeyEvent>
 #include <QLineEdit>
+#include <QScopeGuard>
 #include <QTimer>
 #include <algorithm>
 #include <deque>
@@ -219,6 +221,151 @@ void OSXKeyStateTests::audit_nativeTyping()
   qInfo(
       "inject-to-Qt delivery ms: p50=%.3f p95=%.3f p99=%.3f max=%.3f", receiver.latencyMs[249], receiver.latencyMs[474],
       receiver.latencyMs[494], receiver.latencyMs.back()
+  );
+}
+
+void OSXKeyStateTests::audit_nativeMixed_data()
+{
+  QTest::addColumn<int>("scenario");
+  QTest::newRow("mixed-text-overlap") << 0;
+  QTest::newRow("keypad-rollover-repeat") << 1;
+  QTest::newRow("shift-release-before-letter") << 2;
+  QTest::newRow("held-key-repeat") << 3;
+  QTest::newRow("command-shortcut-release") << 4;
+}
+
+void OSXKeyStateTests::audit_nativeMixed()
+{
+  if (!qEnvironmentVariableIsSet("DESKFLOW_AUDIT_LIVE") || !AXIsProcessTrusted())
+    QSKIP("Requires native receiver opt-in and Accessibility permission");
+  QFETCH(int, scenario);
+  m_log.setFilter(LogLevel::Level::Info);
+  class MixedReceiver : public QLineEdit
+  {
+  public:
+    int repeats = 0, presses = 0, empty = 0;
+    void keyPressEvent(QKeyEvent *event) override
+    {
+      ++presses;
+      if (event->isAutoRepeat())
+        ++repeats;
+      if (event->text().isEmpty())
+        ++empty;
+      QLineEdit::keyPressEvent(event);
+    }
+  } receiver;
+  receiver.setWindowTitle("Deskflow mixed typing and rollover test");
+  receiver.resize(800, 100);
+  receiver.show();
+  receiver.raise();
+  receiver.activateWindow();
+  receiver.setFocus();
+  QVERIFY(QTest::qWaitForWindowActive(&receiver, 5000));
+  EventQueue events;
+  AppUtilUnix appUtil(&events);
+  const auto language = appUtil.getCurrentLanguageCode();
+  class TracedState : public OSXKeyState
+  {
+  public:
+    using OSXKeyState::OSXKeyState;
+    int repeated = 0;
+    void fakeKey(const Keystroke &stroke) override
+    {
+      if (stroke.m_type == Keystroke::KeyType::Button && stroke.m_data.m_button.m_repeat)
+        ++repeated;
+      OSXKeyState::fakeKey(stroke);
+    }
+  } state(&events, appUtil.getKeyboardLayoutList(), false);
+  state.updateKeyMap();
+  state.updateKeyState();
+  const auto cleanup = qScopeGuard([&] { state.fakeAllKeysUp(); });
+  auto pump = [] {
+    QEventLoop loop;
+    QTimer::singleShot(1, &loop, &QEventLoop::quit);
+    loop.exec();
+  };
+  QString expected;
+  QElapsedTimer timer;
+  timer.start();
+  for (int round = 0; round < (scenario == 3 ? 3 : 100); ++round) {
+    QVERIFY2(receiver.isActiveWindow(), "Receiver lost focus; stopping injection");
+    if (scenario == 0) {
+      const QString pattern = "azerty QWERTY 0123456789 !?.,+-*/() ";
+      for (int i = 0; i < pattern.size(); ++i) {
+        QVERIFY2(receiver.isActiveWindow(), "Receiver lost focus; stopping injection");
+        const KeyButton button = 100 + (i % 3);
+        state.fakeKeyDown(pattern[i].unicode(), 0, button, language);
+        expected += pattern[i];
+        // Keep the previous physical key down while the next one is pressed.
+        if (i > 0)
+          QVERIFY(state.fakeKeyUp(100 + ((i - 1) % 3)));
+        pump();
+      }
+      QVERIFY(state.fakeKeyUp(100 + ((pattern.size() - 1) % 3)));
+    } else if (scenario == 1) {
+      const KeyID navigation[] = {kKeyKP_Insert, kKeyKP_End,   kKeyKP_Down, kKeyKP_PageDown, kKeyKP_Left,
+                                  kKeyKP_Begin,  kKeyKP_Right, kKeyKP_Home, kKeyKP_Up,       kKeyKP_PageUp};
+      // Ten distinct physical keys held together; release them in a different order.
+      for (int i = 0; i < 10; ++i) {
+        state.fakeKeyDown(keypadDigits(navigation[i]), 0, 80 + i, language);
+        expected += QChar('0' + i);
+        pump();
+      }
+      for (int i : {2, 7, 1, 9}) {
+        QVERIFY(state.fakeKeyRepeat(keypadDigits(navigation[i]), 0, 1, 80 + i, language));
+        expected += QChar('0' + i);
+        pump();
+      }
+      for (int i : {5, 0, 9, 1, 8, 2, 7, 3, 6, 4})
+        QVERIFY(state.fakeKeyUp(80 + i));
+    } else if (scenario == 3) {
+      state.fakeKeyDown('x', 0, 53, language);
+      expected += 'x';
+      QTest::qWait(600);
+      QVERIFY(receiver.isActiveWindow());
+      for (int i = 0; i < 20; ++i) {
+        QVERIFY(state.fakeKeyRepeat('x', 0, 1, 53, language));
+        expected += 'x';
+        QTest::qWait(20);
+      }
+      QVERIFY(state.fakeKeyUp(53));
+    } else if (scenario == 4) {
+      state.fakeKeyDown(kKeySuper_L, KeyModifierSuper, 133, language);
+      state.fakeKeyDown('a', KeyModifierSuper, 38, language);
+      QVERIFY(state.fakeKeyUp(38));
+      QVERIFY(state.fakeKeyUp(133));
+      pump();
+      state.fakeKeyDown('x', 0, 53, language);
+      QVERIFY(state.fakeKeyUp(53));
+      expected = "x";
+      pump();
+    } else {
+      state.fakeKeyDown(kKeyShift_L, KeyModifierShift, 50, language);
+      state.fakeKeyDown('A', KeyModifierShift, 38, language);
+      expected += 'A';
+      QVERIFY(state.fakeKeyUp(50));
+      QVERIFY(state.fakeKeyUp(38));
+      state.fakeKeyDown('b', 0, 56, language);
+      expected += 'b';
+      QVERIFY(state.fakeKeyUp(56));
+      pump();
+    }
+  }
+  QTest::qWait(500);
+  qInfo(
+      "mixed scenario=%d expected=%lld actual=%lld elapsed=%lld ms", scenario, expected.size(), receiver.text().size(),
+      timer.elapsed()
+  );
+  qInfo(
+      "injected repeats=%d received presses=%d repeats=%d empty=%d", state.repeated, receiver.presses, receiver.repeats,
+      receiver.empty
+  );
+  QCOMPARE(receiver.text(), expected);
+  state.fakeAllKeysUp();
+  QTest::qWait(100);
+  const auto flags = CGEventSourceFlagsState(kCGEventSourceStateHIDSystemState);
+  QVERIFY(
+      !(flags & (kCGEventFlagMaskShift | kCGEventFlagMaskControl | kCGEventFlagMaskAlternate | kCGEventFlagMaskCommand))
   );
 }
 

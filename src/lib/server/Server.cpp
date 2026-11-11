@@ -1194,7 +1194,7 @@ void Server::handleClipboardGrabbed(const Event &event, BaseClientProxy *grabber
     clipboard.m_clipboard.empty();
     clipboard.m_clipboard.close();
   }
-  clipboard.m_clipboardData = clipboard.m_clipboard.marshall();
+  clipboard.m_clipboardData.clear(); // Unknown, including whether the next snapshot is empty.
 
   // tell all other computers to take ownership of clipboard.  tell the
   // grabber that it's clipboard isn't dirty.
@@ -1207,8 +1207,8 @@ void Server::handleClipboardGrabbed(const Event &event, BaseClientProxy *grabber
     }
   }
 
-  if (grabber == m_primaryClient && m_active != m_primaryClient) {
-    LOG_DEBUG("clipboard grabbed while active computer was changed, resending clipboard data");
+  if (grabber == m_primaryClient) {
+    LOG_DEBUG("publishing primary clipboard snapshot");
     onClipboardChanged(m_primaryClient, info->m_id, clipboard.m_clipboardSeqNum);
   }
 }
@@ -1448,7 +1448,11 @@ void Server::onClipboardChanged(const BaseClientProxy *sender, ClipboardID id, u
   }
 
   // should be the expected client
-  assert(sender == m_clients.find(clipboard.m_clipboardOwner)->second);
+  const auto owner = m_clients.find(clipboard.m_clipboardOwner);
+  if (owner == m_clients.end() || sender != owner->second) {
+    LOG_DEBUG("ignoring clipboard data superseded by a newer owner");
+    return;
+  }
 
   // get data
   sender->getClipboard(id, &clipboard.m_clipboard);
@@ -1475,8 +1479,10 @@ void Server::onClipboardChanged(const BaseClientProxy *sender, ClipboardID id, u
     client->setClipboardDirty(id, client != sender);
   }
 
-  // send the new clipboard to the active computer
-  m_active->setClipboard(id, &clipboard.m_clipboard);
+  // Keep all connected peers current, without waiting for a cursor crossing.
+  for (const auto &[name, client] : m_clients)
+    if (client != sender)
+      client->setClipboard(id, &clipboard.m_clipboard);
 }
 
 void Server::onScreensaver(bool activated)

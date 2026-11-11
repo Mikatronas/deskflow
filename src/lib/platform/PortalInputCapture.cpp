@@ -251,6 +251,8 @@ void PortalInputCapture::handleSessionClosed(XdpSession *session)
 
 void PortalInputCapture::claimClipboardOwnership([[maybe_unused]] XdpSession *session) const
 {
+  if (m_computer->hasNativeClipboard())
+    return;
 #ifdef HAVE_LIBPORTAL_CLIPBOARD
   PortalClipboard::claimOwnership(m_clipboard, session);
 #endif
@@ -258,6 +260,8 @@ void PortalInputCapture::claimClipboardOwnership([[maybe_unused]] XdpSession *se
 
 void PortalInputCapture::readClipboardSelection(XdpSession *session) const
 {
+  if (m_computer->hasNativeClipboard())
+    return;
 #ifdef HAVE_LIBPORTAL_CLIPBOARD
   const qint64 maxBytes = static_cast<qint64>(m_computer->maximumClipboardSize()) * 1024;
   LOG_DEBUG("clipboard read cap: %lld bytes", static_cast<long long>(maxBytes));
@@ -269,7 +273,8 @@ void PortalInputCapture::readClipboardSelection(XdpSession *session) const
   }
 
   if (PortalClipboard::readSelectionIntoCache(m_clipboard, session, mimeTypes, maxBytes))
-    m_computer->sendClipboardEvent(EventTypes::ClipboardGrabbed, kClipboardClipboard);
+    if (!m_computer->hasNativeClipboard())
+      m_computer->sendClipboardEvent(EventTypes::ClipboardGrabbed, kClipboardClipboard);
 #else
   (void)session;
 #endif
@@ -323,7 +328,8 @@ void PortalInputCapture::setupSession(XdpInputCaptureSession *session)
   }
 
   // Socket ownership is transferred to the EiComputer
-  m_events->addEvent(Event(EventTypes::EIConnected, m_computer->getEventTarget(), EiComputer::EiConnectInfo::alloc(fd))
+  m_events->addEvent(
+      Event(EventTypes::EIConnected, m_computer->getEventTarget(), EiComputer::EiConnectInfo::alloc(fd))
   );
 
   using enum Signal;
@@ -742,7 +748,8 @@ void PortalInputCapture::handleActivated(
 #ifdef HAVE_LIBPORTAL_CLIPBOARD
   if (m_session) {
     LOG_DEBUG("reading clipboard selection on activation");
-    m_computer->sendClipboardEvent(EventTypes::ClipboardGrabbed, kClipboardClipboard);
+    if (!m_computer->hasNativeClipboard())
+      m_computer->sendClipboardEvent(EventTypes::ClipboardGrabbed, kClipboardClipboard);
 
     XdpSession *session = xdp_input_capture_session_get_session(m_session);
     const char **mimeTypes = xdp_session_get_selection_mime_types(session);

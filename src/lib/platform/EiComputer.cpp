@@ -20,6 +20,7 @@
 #include "platform/EiKeyState.h"
 #include "platform/PortalInputCapture.h"
 #include "platform/PortalRemoteDesktop.h"
+#include "platform/WaylandClipboard.h"
 
 #include <algorithm>
 #include <bit>
@@ -85,6 +86,12 @@ EiComputer::EiComputer(bool isPrimary, IEventQueue *events, bool usePortal)
     m_clipboard = new EiClipboard(kClipboardClipboard);
   }
 
+  if (!m_clipboard)
+    m_clipboard = new EiClipboard(kClipboardClipboard);
+  m_waylandClipboard = new WaylandClipboard();
+  m_clipboardTimer = m_events->newTimer(0.05, nullptr);
+  m_events->addHandler(EventTypes::Timer, m_clipboardTimer, [this](const auto &) { checkClipboards(); });
+
   // disable sleep if the flag is set
   if (Settings::value(Settings::Core::PreventSleep).toBool()) {
     m_powerManager.disableSleep();
@@ -93,6 +100,10 @@ EiComputer::EiComputer(bool isPrimary, IEventQueue *events, bool usePortal)
 
 EiComputer::~EiComputer()
 {
+  if (m_clipboardTimer) {
+    m_events->removeHandler(EventTypes::Timer, m_clipboardTimer);
+    m_events->deleteTimer(m_clipboardTimer);
+  }
   m_events->adoptBuffer(nullptr);
   m_events->removeHandler(EventTypes::System, m_events->getSystemTarget());
 
@@ -108,6 +119,7 @@ EiComputer::~EiComputer()
 #endif
   delete m_portalInputCapture;
   delete m_portalRemoteDesktop;
+  delete m_waylandClipboard;
 }
 
 void EiComputer::eiLogEvent(ei_log_priority priority, const char *message) const
@@ -180,6 +192,8 @@ void *EiComputer::getEventTarget() const
 
 bool EiComputer::getClipboard(ClipboardID id, IClipboard *clipboard) const
 {
+  if (hasNativeClipboard())
+    return id == kClipboardClipboard && IClipboard::copy(clipboard, m_clipboard);
   // If using portal input capture, get clipboard from there
   if (m_portalInputCapture) {
     const auto sourceClipboard = m_portalInputCapture->getClipboard(id);
@@ -454,6 +468,9 @@ void EiComputer::stopEmulating() const
 
 void EiComputer::enter()
 {
+  if (m_isPrimary)
+    releaseCapturedKeys();
+  resetScrollRemainder();
   m_isOnComputer = true;
   if (!m_isPrimary && m_eiAbs) {
     // Emulation is started lazily by ensureEmulating() on the first injected
@@ -488,6 +505,22 @@ bool EiComputer::setClipboard(ClipboardID id, const IClipboard *clipboard)
     return false;
   }
 
+  if (hasNativeClipboard()) {
+    if (id != kClipboardClipboard)
+      return false;
+    WaylandClipboard::Snapshot snapshot;
+    if (!clipboard->open(0))
+      return false;
+    for (int i = 0; i < static_cast<int>(IClipboard::Format::TotalFormats); ++i) {
+      const auto format = static_cast<IClipboard::Format>(i);
+      if (clipboard->has(format))
+        snapshot.emplace(format, clipboard->get(format));
+    }
+    clipboard->close();
+    IClipboard::copy(m_clipboard, clipboard);
+    m_waylandClipboard->publish(std::move(snapshot));
+    return true;
+  }
   // If using portal input capture, set clipboard there
   if (m_portalInputCapture) {
     IClipboard *targetClipboard = m_portalInputCapture->getClipboard(id);
@@ -511,11 +544,24 @@ bool EiComputer::setClipboard(ClipboardID id, const IClipboard *clipboard)
   return ok;
 }
 
+bool EiComputer::hasNativeClipboard() const
+{
+  return m_waylandClipboard && m_waylandClipboard->ready();
+}
+
 void EiComputer::checkClipboards()
 {
-  // For portal-based input capture, clipboard changes come via portal events
-  // For socket-based, clipboard is passive and changes are sent explicitly
-  // Nothing to do here
+  if (!hasNativeClipboard())
+    return;
+  m_waylandClipboard->setLimit(std::min<size_t>(m_maximumClipboardSize, 10240) * 1024);
+  if (auto snapshot = m_waylandClipboard->take()) {
+    m_clipboard->open(0);
+    m_clipboard->empty();
+    for (const auto &[format, data] : *snapshot)
+      m_clipboard->add(format, data);
+    m_clipboard->close();
+    sendClipboardEvent(EventTypes::ClipboardGrabbed, kClipboardClipboard);
+  }
 }
 
 void EiComputer::openScreensaver(bool notify)
@@ -672,6 +718,7 @@ void EiComputer::removeDevice(struct ei_device *device)
   if (wasTracked) {
     m_isEmulating = false;
     cancelIdleEmulationTimer();
+    releaseCapturedKeys();
     // same as for a paused device: no release events follow a removal
     updateButtons();
   }
@@ -763,27 +810,34 @@ void EiComputer::onKeyEvent(ei_event *event)
   auto keycode = ei_event_keyboard_get_key(event);
   uint32_t keyval = keycode + 8;
   bool pressed = ei_event_keyboard_get_key_is_press(event);
-  KeyID keyid = m_keyState->mapKeyFromKeyval(keyval);
-  auto keybutton = static_cast<KeyButton>(keyval);
-  bool repeat;
-
-  m_keyState->updateXkbState(keyval, pressed);
-  KeyModifierMask mask = m_keyState->pollActiveModifiers();
-
-  repeat = pressed && m_lastPressed == keyid && keyid != kKeyNone;
-
-  m_lastPressed = pressed ? keyid : kKeyNone;
-
-  LOG_VERBOSE(
-      "event: key %s%s keycode=%d keyid=%d mask=0x%x", pressed ? "press" : "release", repeat ? " (repeat)" : "",
-      keycode, keyid, mask
-  );
-
-  if (m_isPrimary && onHotkey(keyid, pressed, mask)) {
+  const auto keybutton = static_cast<KeyButton>(keyval);
+  const auto held = m_heldKeys.find(keybutton);
+  const bool repeat = pressed && held != m_heldKeys.end();
+  // Releases retain the identity and hotkey chosen at press time, even if modifiers changed.
+  if (!pressed && held == m_heldKeys.end())
     return;
+  const KeyID keyid = pressed ? m_keyState->mapKeyFromKeyval(keyval) : held->second.id;
+  if (!repeat)
+    m_keyState->updateXkbState(keyval, pressed);
+  const auto mask = m_keyState->pollActiveModifiers();
+  uint32_t hotkey = held == m_heldKeys.end() ? 0 : held->second.hotkey;
+  if (pressed && !repeat) {
+    if (m_isPrimary) {
+      const auto binding = m_hotkeys.find(keyid);
+      if (binding != m_hotkeys.end())
+        hotkey = binding->second.findByMask(mask);
+    }
+    m_heldKeys.emplace(keybutton, HeldKey{keyid, hotkey});
   }
-
-  if (keyid != kKeyNone) {
+  if (!pressed)
+    m_heldKeys.erase(keybutton);
+  if (hotkey) {
+    if (!repeat)
+      sendEvent(
+          pressed ? EventTypes::PrimaryComputerHotkeyDown : EventTypes::PrimaryComputerHotkeyUp,
+          HotKeyInfo::alloc(hotkey)
+      );
+  } else if (keyid != kKeyNone) {
     m_keyState->sendKeyEvent(getEventTarget(), pressed, repeat, keyid, mask, 1, keybutton);
   }
 }
@@ -812,86 +866,35 @@ void EiComputer::onButtonEvent(ei_event *event)
 
 void EiComputer::onPointerScrollEvent(ei_event *event)
 {
-  // Smooth scroll deltas are in pixels. We accumulate them as fractional
-  // wheel-click units and only send full wheel clicks (120 units each)
-  // to the client. Sub-120 fractional clicks are silently ignored by
-  // compositors on the receiving end, so accumulating full clicks avoids
-  // flooding the network with events that the client drops anyway.
-  static const double s_wheelClicksPerPixel = 0.1; // 10 pixels == 1 full wheel click
-
   assert(m_isPrimary);
-
-  auto dx = ei_event_scroll_get_dx(event);
-  auto dy = ei_event_scroll_get_dy(event);
-  struct ei_device *device = ei_event_get_device(event);
-
-  LOG_VERBOSE("event: scroll (%.2f, %.2f)", dx, dy);
-
-  auto *remainder = static_cast<struct ScrollRemainder *>(ei_device_get_user_data(device));
+  const double dx = ei_event_scroll_get_dx(event);
+  const double dy = ei_event_scroll_get_dy(event);
+  if (!std::isfinite(dx) || !std::isfinite(dy))
+    return;
+  auto *device = ei_event_get_device(event);
+  auto *remainder = static_cast<ScrollRemainder *>(ei_device_get_user_data(device));
   if (!remainder) {
-    remainder = new ScrollRemainder();
+    remainder = new ScrollRemainder{};
     ei_device_set_user_data(device, remainder);
   }
-
-  // Accumulate smooth scroll as fractional wheel clicks (1.0 == 120 units)
-  double accX = remainder->smoothX + dx * s_wheelClicksPerPixel;
-  double accY = remainder->smoothY + dy * s_wheelClicksPerPixel;
-
-  // Only dispatch full wheel clicks. Use trunc (toward zero) not floor,
-  // because floor(-0.3) == -1 which would fire a spurious click.
-  double fullClicksX = std::trunc(accX);
-  double fullClicksY = std::trunc(accY);
-
-  // libei and deskflow seem to use opposite directions, so we have
-  // to send the opposite of the value reported by EI if we want to
-  // remain compatible with other platforms (including X11).
-  if (fullClicksX != 0 || fullClicksY != 0) {
-    sendEvent(
-        EventTypes::PrimaryComputerWheel,
-        WheelInfo::alloc(
-            static_cast<int32_t>(-fullClicksX) * s_scrollDelta, static_cast<int32_t>(-fullClicksY) * s_scrollDelta
-        )
-    );
-    accX -= fullClicksX;
-    accY -= fullClicksY;
-  }
-
-  remainder->smoothX = accX;
-  remainder->smoothY = accY;
+  // Preserve 1/120-notch resolution on the existing wire protocol.
+  const double ax = remainder->smoothX + dx * 12.0;
+  const double ay = remainder->smoothY + dy * 12.0;
+  const auto x = static_cast<int32_t>(std::clamp(std::trunc(ax), double(-INT32_MAX), double(INT32_MAX)));
+  const auto y = static_cast<int32_t>(std::clamp(std::trunc(ay), double(-INT32_MAX), double(INT32_MAX)));
+  remainder->smoothX = ax - x;
+  remainder->smoothY = ay - y;
+  if (x || y)
+    sendEvent(EventTypes::PrimaryComputerWheel, WheelInfo::alloc(-x, -y));
 }
 
 void EiComputer::onPointerScrollDiscreteEvent(ei_event *event)
 {
-  // both libei and deskflow use multiples of 120 to represent
-  // one scroll wheel click event
-
   assert(m_isPrimary);
-
-  auto dx = ei_event_scroll_get_discrete_dx(event);
-  auto dy = ei_event_scroll_get_discrete_dy(event);
-
-  LOG_VERBOSE("event: scroll discrete (%d, %d)", dx, dy);
-
-  // accumulate fractional ticks, then emit 120 units at a time
-  struct ei_device *device = ei_event_get_device(event);
-  auto *remainder = static_cast<struct ScrollRemainder *>(ei_device_get_user_data(device));
-  if (!remainder) {
-    remainder = new ScrollRemainder();
-    ei_device_set_user_data(device, remainder);
-  }
-
-  double ax = remainder->discreteX + dx;
-  double ay = remainder->discreteY + dy;
-  auto cx = static_cast<int32_t>(ax / s_scrollDelta) * s_scrollDelta;
-  auto cy = static_cast<int32_t>(ay / s_scrollDelta) * s_scrollDelta;
-  remainder->discreteX = ax - cx;
-  remainder->discreteY = ay - cy;
-
-  // libei and deskflow seem to use opposite directions, so we have
-  // to send the opposite of the value reported by EI if we want to
-  // remain compatible with other platforms (including X11).
-  if (cx != 0 || cy != 0)
-    sendEvent(EventTypes::PrimaryComputerWheel, WheelInfo::alloc(-cx, -cy));
+  const auto x = ei_event_scroll_get_discrete_dx(event);
+  const auto y = ei_event_scroll_get_discrete_dy(event);
+  if ((x || y) && x != INT32_MIN && y != INT32_MIN)
+    sendEvent(EventTypes::PrimaryComputerWheel, WheelInfo::alloc(-x, -y));
 }
 
 void EiComputer::onMotionEvent(ei_event *event)
@@ -959,7 +962,8 @@ void EiComputer::handleSystemEvent(const Event &)
   ei_dispatch(m_ei);
   struct ei_event *event;
 
-  while ((event = ei_get_event(m_ei)) != nullptr) {
+  size_t processed = 0;
+  while (processed++ < 256 && (event = ei_get_event(m_ei)) != nullptr) {
     auto type = ei_event_get_type(event);
     auto seat = ei_event_get_seat(event);
     auto device = ei_event_get_device(event);
@@ -1018,6 +1022,7 @@ void EiComputer::handleSystemEvent(const Event &)
       m_isEmulating = false;
       // a paused device is reset to neutral by the EIS side and sends no
       // further events, so the releases for held buttons never arrive
+      releaseCapturedKeys();
       updateButtons();
       cancelIdleEmulationTimer();
       break;
@@ -1040,6 +1045,8 @@ void EiComputer::handleSystemEvent(const Event &)
       break;
     case EI_EVENT_DEVICE_STOP_EMULATING:
       LOG_DEBUG("device %s stopped emulating", ei_device_get_name(device));
+      if (device == m_eiKeyboard)
+        releaseCapturedKeys();
       break;
     case EI_EVENT_KEYBOARD_KEY:
       onKeyEvent(event);
@@ -1067,12 +1074,29 @@ void EiComputer::handleSystemEvent(const Event &)
       break;
     case EI_EVENT_SCROLL_STOP:
     case EI_EVENT_SCROLL_CANCEL:
+      if (auto *remainder = static_cast<ScrollRemainder *>(ei_device_get_user_data(device)))
+        *remainder = {};
       break;
     default:
       break;
     }
     ei_event_unref(event);
   }
+  if (processed > 256)
+    m_events->addEvent(Event(EventTypes::System, m_events->getSystemTarget()));
+}
+
+void EiComputer::releaseCapturedKeys()
+{
+  for (const auto &[button, key] : m_heldKeys) {
+    m_keyState->updateXkbState(button, false);
+    if (key.hotkey)
+      sendEvent(EventTypes::PrimaryComputerHotkeyUp, HotKeyInfo::alloc(key.hotkey));
+    else if (key.id != kKeyNone)
+      m_keyState->sendKeyEvent(getEventTarget(), false, false, key.id, 0, 1, button);
+  }
+  m_heldKeys.clear();
+  m_keyState->clearStaleModifiers();
 }
 
 void EiComputer::updateButtons()

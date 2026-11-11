@@ -17,6 +17,8 @@ private Q_SLOTS:
   void initTestCase();
   void audit_nativeTyping_data();
   void audit_nativeTyping();
+  void audit_nativeMixed_data();
+  void audit_nativeMixed();
   // Test are run in order top to bottom
   void mapModifiersFromOSX_OSXMask();
   void fakePollShift();

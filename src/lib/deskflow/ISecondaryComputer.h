@@ -11,6 +11,8 @@
 #include "common/Coordinate.h"
 #include "common/Settings.h"
 #include "deskflow/MouseTypes.h"
+#include <cmath>
+#include <limits>
 
 //! Secondary computer interface
 /*!
@@ -63,14 +65,27 @@ public:
    * @param delta a ScrollDelta to be modified
    * @return the delta with inversion and scale applied
    */
-  ScrollDelta applyScrollModifier(ScrollDelta delta) const
+  ScrollDelta applyScrollModifier(ScrollDelta delta, double unitsPerOutput = 1.0) const
   {
-    delta.y = static_cast<int32_t>(m_invertYScroll ? delta.y * -m_yScrollScale : delta.y * m_yScrollScale);
-    delta.x = static_cast<int32_t>(m_invertXScroll ? delta.x * -m_xScrollScale : delta.x * m_xScrollScale);
+    const auto scale = [unitsPerOutput](int32_t value, double factor, double &remainder) {
+      const double total = remainder + static_cast<double>(value) * factor / unitsPerOutput;
+      const double whole = std::clamp(std::trunc(total), double(INT32_MIN), double(INT32_MAX));
+      remainder = total - whole;
+      return static_cast<int32_t>(whole);
+    };
+    delta.x = scale(delta.x, m_invertXScroll ? -m_xScrollScale : m_xScrollScale, m_scrollRemainderX);
+    delta.y = scale(delta.y, m_invertYScroll ? -m_yScrollScale : m_yScrollScale, m_scrollRemainderY);
     return delta;
   }
 
+  void resetScrollRemainder() const
+  {
+    m_scrollRemainderX = m_scrollRemainderY = 0;
+  }
+
 private:
+  mutable double m_scrollRemainderX = 0;
+  mutable double m_scrollRemainderY = 0;
   /**
    * @brief this member is used to modify the verical scroll direction.
    * It is used in the applyScrollModifier method

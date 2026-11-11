@@ -36,6 +36,7 @@ class PortalRemoteDesktop;
 class PortalInputCapture;
 class PortalGlobalShortcuts;
 class EiClipboard;
+class WaylandClipboard;
 
 using ClipboardInfo = IComputer::ClipboardInfo;
 
@@ -91,6 +92,8 @@ public:
 
   // Send clipboard event (needed by PortalInputCapture)
   void sendClipboardEvent(EventTypes type, ClipboardID id) const;
+
+  bool hasNativeClipboard() const;
 
   // Local clipboard cache (used by PortalRemoteDesktop to land selection reads)
   EiClipboard *getClipboardCache() const
@@ -151,13 +154,21 @@ private:
   // keyboard stuff
   EiKeyState *m_keyState = nullptr;
 
-  KeyID m_lastPressed = kKeyNone;
+  struct HeldKey
+  {
+    KeyID id;
+    uint32_t hotkey;
+  };
+  std::map<KeyButton, HeldKey> m_heldKeys;
+  void releaseCapturedKeys();
 
   // mouse buttons currently held, indexed by ButtonID
   std::bitset<NumButtonIDs> m_buttons;
 
   // clipboard stuff
   EiClipboard *m_clipboard = nullptr;
+  WaylandClipboard *m_waylandClipboard = nullptr;
+  EventQueueTimer *m_clipboardTimer = nullptr;
   size_t m_maximumClipboardSize = INT_MAX;
 
   std::vector<ei_device *> m_eiDevices;

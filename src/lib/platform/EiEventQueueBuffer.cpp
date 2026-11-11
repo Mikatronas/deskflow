@@ -74,10 +74,10 @@ void EiEventQueueBuffer::waitForEvent(double msTimeout)
       char buf[64];
       ssize_t total = 0;
       ssize_t result;
-      while ((result = read(m_pipeRead, buf, sizeof(buf)) > 0)) {
+      while ((result = read(m_pipeRead, buf, sizeof(buf))) > 0) {
         total += result;
       }
-      LOG_VERBOSE("event queue read result: %d (total drained: %zd)", result, total);
+      LOG_VERBOSE("event queue read result: %zd (total drained: %zd)", result, total);
     }
   }
   Thread::testCancel();
@@ -120,7 +120,7 @@ bool EiEventQueueBuffer::addEvent(uint32_t dataID)
 
   // tickle the pipe so our read thread wakes up
   auto result = write(m_pipeWrite, "!", 1);
-  LOG_VERBOSE("event queue write result: %d", result);
+  LOG_VERBOSE("event queue write result: %zd", result);
 
   return true;
 }

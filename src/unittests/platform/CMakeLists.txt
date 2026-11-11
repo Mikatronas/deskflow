@@ -27,6 +27,13 @@ elseif(APPLE)
 elseif(UNIX)
   if(LIBEI_FOUND)
     create_test(
+      NAME WaylandClipboardTests
+      DEPENDS platform
+      LIBS base arch Qt::Gui
+      SOURCE WaylandClipboardTests.cpp
+      WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/src/lib/platform"
+    )
+    create_test(
       NAME EiHotKeyModifierMatchingTests
       DEPENDS platform
       LIBS base arch

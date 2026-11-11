@@ -7,6 +7,7 @@
  */
 
 #include "platform/OSXComputer.h"
+#include "deskflow/KeypadPolicy.h"
 
 #include "arch/Arch.h"
 #include "arch/ArchException.h"
@@ -230,8 +231,16 @@ void *OSXComputer::getEventTarget() const
 
 bool OSXComputer::getClipboard(ClipboardID, IClipboard *dst) const
 {
-  Clipboard::copy(dst, &m_pasteboard);
-  return true;
+  const auto generation = clipboardGeneration();
+  Clipboard snapshot;
+  if (!isClipboardPrivate())
+    Clipboard::copy(&snapshot, &m_pasteboard);
+  if (generation != clipboardGeneration() || isClipboardPrivate()) {
+    snapshot.open(0);
+    snapshot.empty();
+    snapshot.close();
+  }
+  return Clipboard::copy(dst, &snapshot);
 }
 
 void OSXComputer::getShape(int32_t &x, int32_t &y, int32_t &w, int32_t &h) const
@@ -622,15 +631,29 @@ void OSXComputer::fakeMouseRelativeMove(int32_t dx, int32_t dy) const
   m_cursorPosValid = false;
 }
 
+void OSXComputer::fakeKeyDown(KeyID id, KeyModifierMask mask, KeyButton button, const std::string &lang)
+{
+  PlatformComputer::fakeKeyDown(m_keypadDigits ? keypadDigits(id) : id, mask, button, lang);
+}
+
+bool OSXComputer::fakeKeyRepeat(
+    KeyID id, KeyModifierMask mask, int32_t count, KeyButton button, const std::string &lang
+)
+{
+  return PlatformComputer::fakeKeyRepeat(m_keypadDigits ? keypadDigits(id) : id, mask, count, button, lang);
+}
+
 void OSXComputer::fakeMouseWheel(ScrollDelta delta) const
 {
   if (delta.x != 0 || delta.y != 0) {
-    delta = applyScrollModifier(
-        {static_cast<int32_t>(delta.x / s_scrollDelta), static_cast<int32_t>(delta.y / s_scrollDelta)}
-    );
-    // create a scroll event, post it and release it.  not sure if kCGScrollEventUnitLine
-    // is the right choice here over kCGScrollEventUnitPixel
-    CGEventRef scrollEvent = CGEventCreateScrollWheelEvent(nullptr, kCGScrollEventUnitLine, 2, delta.y, delta.x);
+    // Preserve sub-notch input and fractional sensitivity in pixel units.
+    // A conventional notch is 30 pixels at scale 1; no artificial momentum.
+    delta = applyScrollModifier(delta, s_scrollDelta / 30.0);
+    if (delta.x == 0 && delta.y == 0)
+      return;
+    CGEventRef scrollEvent = CGEventCreateScrollWheelEvent(nullptr, kCGScrollEventUnitPixel, 2, delta.y, delta.x);
+    if (!scrollEvent)
+      return;
 
     // Fix for sticky keys
     CGEventFlags modifiers = m_keyState->getModifierStateAsOSXFlags();
@@ -643,6 +666,8 @@ void OSXComputer::fakeMouseWheel(ScrollDelta delta) const
 
 void OSXComputer::showCursor()
 {
+  if (!m_cursorHidden)
+    return;
   LOG_DEBUG("showing cursor");
 
   CFStringRef propertyString = CFStringCreateWithCString(nullptr, "SetsCursorInBackground", kCFStringEncodingMacRoman);
@@ -666,6 +691,8 @@ void OSXComputer::showCursor()
 
 void OSXComputer::hideCursor()
 {
+  if (m_cursorHidden)
+    return;
   LOG_DEBUG("hiding cursor");
 
   CFStringRef propertyString = CFStringCreateWithCString(nullptr, "SetsCursorInBackground", kCFStringEncodingMacRoman);
@@ -689,8 +716,9 @@ void OSXComputer::hideCursor()
 
 void OSXComputer::enable()
 {
+  m_keypadDigits = Settings::value(Settings::Client::KeypadDigits).toBool();
   // watch the clipboard
-  m_clipboardTimer = m_events->newTimer(1.0, nullptr);
+  m_clipboardTimer = m_events->newTimer(0.1, nullptr);
   m_events->addHandler(EventTypes::Timer, m_clipboardTimer, [this](const auto &) { checkClipboards(); });
 
   m_axTimer = m_events->newTimer(1.0, nullptr);
@@ -818,7 +846,14 @@ bool OSXComputer::canLeave()
 
 void OSXComputer::leave()
 {
+  resetScrollRemainder();
   hideCursor();
+  if (!m_isPrimary) {
+    // Park synchronously during handoff: no delayed log watcher can warp after re-entry.
+    const auto bounds = CGDisplayBounds(CGMainDisplayID());
+    CGWarpMouseCursorPosition(CGPointMake(CGRectGetMaxX(bounds) - 1, CGRectGetMaxY(bounds) - 1));
+    m_cursorPosValid = false;
+  }
 
   if (m_isPrimary) {
     avoidHesitatingCursor();
@@ -845,7 +880,7 @@ bool OSXComputer::setClipboard(ClipboardID, const IClipboard *src)
 void OSXComputer::checkClipboards()
 {
   LOG_VERBOSE("checking clipboard");
-  if (m_pasteboard.synchronize()) {
+  if (m_pasteboard.synchronize() && !isClipboardPrivate()) {
     LOG_DEBUG("clipboard changed");
     sendClipboardEvent(EventTypes::ClipboardGrabbed, kClipboardClipboard);
     sendClipboardEvent(EventTypes::ClipboardGrabbed, kClipboardSelection);

@@ -54,6 +54,9 @@ public:
     return m_events;
   }
 
+  void fakeKeyDown(KeyID id, KeyModifierMask mask, KeyButton button, const std::string &lang) override;
+  bool fakeKeyRepeat(KeyID id, KeyModifierMask mask, int32_t count, KeyButton button, const std::string &lang) override;
+
   // IComputer overrides
   void *getEventTarget() const override;
   bool getClipboard(ClipboardID id, IClipboard *) const override;
@@ -104,6 +107,7 @@ protected:
   IKeyState *getKeyState() const override;
 
 private:
+  bool m_keypadDigits = false;
   bool updateComputerShape();
   bool updateComputerShape(const CGDirectDisplayID, const CGDisplayChangeSummaryFlags);
   void postMouseEvent(CGPoint &) const;

@@ -1,0 +1,26 @@
+28/28 Test #28: ClientProxyTests .................   Passed    0.21 sec
+
+100% tests passed out of 28
+
+Total Test time (real) =   3.20 sec
+********* Start testing of OSXKeyStateTests *********
+Config: Using QtTest library 6.12.0, Qt 6.12.0 (arm64-little_endian-lp64 shared (dynamic) release build; by Apple LLVM 21.0.0 (clang-2100.3.34.2)), macos 27.2.1
+PASS   : OSXKeyStateTests::initTestCase()
+QINFO  : OSXKeyStateTests::audit_nativeMixed(mixed-text-overlap) mixed scenario=0 expected=3600 actual=3600 elapsed=30647 ms
+QINFO  : OSXKeyStateTests::audit_nativeMixed(mixed-text-overlap) injected repeats=0 received presses=4400 repeats=0 empty=800
+PASS   : OSXKeyStateTests::audit_nativeMixed(mixed-text-overlap)
+QINFO  : OSXKeyStateTests::audit_nativeMixed(keypad-rollover-repeat) mixed scenario=1 expected=1400 actual=1400 elapsed=12451 ms
+QINFO  : OSXKeyStateTests::audit_nativeMixed(keypad-rollover-repeat) injected repeats=400 received presses=1400 repeats=0 empty=0
+PASS   : OSXKeyStateTests::audit_nativeMixed(keypad-rollover-repeat)
+QINFO  : OSXKeyStateTests::audit_nativeMixed(shift-release-before-letter) mixed scenario=2 expected=200 actual=200 elapsed=1348 ms
+QINFO  : OSXKeyStateTests::audit_nativeMixed(shift-release-before-letter) injected repeats=0 received presses=300 repeats=0 empty=100
+PASS   : OSXKeyStateTests::audit_nativeMixed(shift-release-before-letter)
+QINFO  : OSXKeyStateTests::audit_nativeMixed(held-key-repeat) mixed scenario=3 expected=63 actual=63 elapsed=3629 ms
+QINFO  : OSXKeyStateTests::audit_nativeMixed(held-key-repeat) injected repeats=60 received presses=63 repeats=0 empty=0
+PASS   : OSXKeyStateTests::audit_nativeMixed(held-key-repeat)
+QINFO  : OSXKeyStateTests::audit_nativeMixed(command-shortcut-release) mixed scenario=4 expected=1 actual=1 elapsed=2208 ms
+QINFO  : OSXKeyStateTests::audit_nativeMixed(command-shortcut-release) injected repeats=0 received presses=300 repeats=0 empty=200
+PASS   : OSXKeyStateTests::audit_nativeMixed(command-shortcut-release)
+PASS   : OSXKeyStateTests::cleanupTestCase()
+Totals: 7 passed, 0 failed, 0 skipped, 0 blacklisted, 51015ms
+********* Finished testing of OSXKeyStateTests *********

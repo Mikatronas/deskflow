@@ -29,3 +29,21 @@ CFStringRef getDraggedFileURL()
 
   return (CFStringRef)string;
 }
+
+// Inspect types on the same pasteboard that Deskflow reads; never export concealed data.
+bool isClipboardPrivate()
+{
+  @autoreleasepool {
+    NSArray *types = [[NSPasteboard generalPasteboard] types];
+    return [types containsObject:@"org.nspasteboard.ConcealedType"] ||
+           [types containsObject:@"org.nspasteboard.TransientType"] ||
+           [types containsObject:@"com.agilebits.onepassword"];
+  }
+}
+
+int64_t clipboardGeneration()
+{
+  @autoreleasepool {
+    return [[NSPasteboard generalPasteboard] changeCount];
+  }
+}

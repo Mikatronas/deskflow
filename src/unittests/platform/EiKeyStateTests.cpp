@@ -134,7 +134,7 @@ void EiKeyStateTests::updateLockedModifiers_compositorLockState_numLockFollowsCo
   QVERIFY((keyState.pollActiveModifiers() & KeyModifierNumLock) == 0);
 }
 
-// Audit reproducer: the documented base-level lookup must ignore Shift.
+// Printable symbols follow modifiers; function keys must survive Ctrl+Alt.
 void EiKeyStateTests::audit_baseIdentityWithShift()
 {
   TestAppUtil appUtil;
@@ -145,8 +145,20 @@ void EiKeyStateTests::audit_baseIdentityWithShift()
   const auto shifted = state.mapKeyFromKeyval(38);
   state.updateXkbState(50, false);
   qInfo("base=%u shifted=%u", plain, shifted);
-  QEXPECT_FAIL("", "Audit: level count is passed as level index; fallback becomes modifier-dependent", Continue);
-  QCOMPARE(shifted, plain);
+  QCOMPARE(plain, KeyID('a'));
+  QCOMPARE(shifted, KeyID('A'));
+  state.updateXkbState(37, true); // Ctrl
+  state.updateXkbState(64, true); // Alt
+  QCOMPARE(state.mapKeyFromKeyval(67), KeyID(kKeyF1));
+  state.updateXkbState(37, false);
+  state.updateXkbState(64, false);
+  state.updateXkbState(50, true);
+  QCOMPARE(state.mapKeyFromKeyval(10), KeyID('!'));
+  state.updateXkbState(50, false);
+  QCOMPARE(state.mapKeyFromKeyval(87), KeyID(kKeyKP_End));
+  state.updateXkbState(77, true);
+  state.updateXkbState(77, false);
+  QCOMPARE(state.mapKeyFromKeyval(87), KeyID(kKeyKP_1));
 }
 
 QTEST_MAIN(EiKeyStateTests)

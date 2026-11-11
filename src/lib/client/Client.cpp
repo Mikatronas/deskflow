@@ -657,11 +657,8 @@ void Client::handleClipboardGrabbed(const Event &event)
   m_sentClipboard[info->m_id] = false;
   m_timeClipboard[info->m_id] = 0;
 
-  // if we're not the active computer then send the clipboard now,
-  // otherwise we'll wait until we leave.
-  if (!m_active) {
-    sendClipboard(info->m_id);
-  }
+  // Publish changes immediately; the server arbitrates ownership and fans out.
+  sendClipboard(info->m_id);
 }
 
 void Client::handleHello()

@@ -668,6 +668,7 @@ void OSXKeyState::postKeyboardKey(CGKeyCode virtualKey, bool keyDown)
   CGEventRef event = CGEventCreateKeyboardEvent(nullptr, virtualKey, keyDown);
   if (event) {
     CGEventSetFlags(event, getKeyboardEventFlags());
+    CGEventSetIntegerValueField(event, kCGKeyboardEventAutorepeat, 0);
     CGEventPost(kCGHIDEventTap, event);
     CFRelease(event);
   } else {
@@ -690,10 +691,10 @@ void OSXKeyState::fakeKey(const Keystroke &keystroke)
     );
 
     setKeyboardModifiers(virtualKey, keyDown);
-    if (postHIDVirtualKey(virtualKey, keyDown) != KERN_SUCCESS) {
-      LOG_WARN("fail to post hid event");
-      postKeyboardKey(virtualKey, keyDown);
-    }
+    // Keep modifier flags attached to each event. Deliver repeats as additional
+    // downs with no intervening up: macOS 27 filters synthetic autorepeat-tagged
+    // events before AppKit (verified with the native rollover receiver).
+    postKeyboardKey(virtualKey, keyDown);
 
     break;
   }

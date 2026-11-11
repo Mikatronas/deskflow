@@ -53,6 +53,8 @@ void EiClipboard::add(Format format, const std::string &data)
   }
 
   const auto formatID = static_cast<int>(format);
+  if (formatID < 0 || formatID >= static_cast<int>(Format::TotalFormats))
+    return;
   m_data[formatID] = data;
   m_added[formatID] = true;
 }
@@ -92,7 +94,8 @@ bool EiClipboard::has(Format format) const
     LOG_WARN("cannot check for clipboard format, not open");
     return false;
   }
-  return m_added[static_cast<int>(format)];
+  const auto id = static_cast<int>(format);
+  return id >= 0 && id < static_cast<int>(Format::TotalFormats) && m_added[id];
 }
 
 std::string EiClipboard::get(Format format) const
@@ -102,7 +105,8 @@ std::string EiClipboard::get(Format format) const
     LOG_WARN("cannot get clipboard format, not open");
     return "";
   }
-  return m_data[static_cast<int>(format)];
+  const auto id = static_cast<int>(format);
+  return id >= 0 && id < static_cast<int>(Format::TotalFormats) ? m_data[id] : "";
 }
 
 } // namespace deskflow

@@ -163,9 +163,11 @@ std::uint32_t EiKeyState::convertModMask(xkb_mod_mask_t xkbModMaskIn, bool mapMo
       modMaskOut |= (1 << kKeyModifierBitControl);
     else if (strcmp(XKB_MOD_NAME_ALT, name) == 0 || strcmp(XKB_VMOD_NAME_ALT, name) == 0)
       modMaskOut |= (1 << kKeyModifierBitAlt);
-    else if (strcmp(XKB_MOD_NAME_LOGO, name) == 0 ||   // aka windows/command key
-             strcmp(XKB_VMOD_NAME_SUPER, name) == 0 || // virtual; usually mapped to logo key
-             strcmp(XKB_VMOD_NAME_HYPER, name) == 0)   // virtual; often mapped to caps lock key
+    else if (
+        strcmp(XKB_MOD_NAME_LOGO, name) == 0 ||   // aka windows/command key
+        strcmp(XKB_VMOD_NAME_SUPER, name) == 0 || // virtual; usually mapped to logo key
+        strcmp(XKB_VMOD_NAME_HYPER, name) == 0
+    ) // virtual; often mapped to caps lock key
       modMaskOut |= (1 << kKeyModifierBitSuper);
     else if (strcmp(XKB_MOD_NAME_MOD5, name) == 0 || strcmp(XKB_VMOD_NAME_LEVEL3, name) == 0)
       modMaskOut |= (1 << kKeyModifierBitAltGr);
@@ -175,9 +177,10 @@ std::uint32_t EiKeyState::convertModMask(xkb_mod_mask_t xkbModMaskIn, bool mapMo
       modMaskOut |= (1 << kKeyModifierBitNumLock);
     else if (strcmp(XKB_VMOD_NAME_SCROLL, name) == 0)
       modMaskOut |= (1 << kKeyModifierBitScrollLock);
-    else if ((strcmp(XKB_VMOD_NAME_META, name) == 0) || // virtual; the old meta (not the new meta/super/logo key)
-             (!mapMod2ToNumLock && strcmp(XKB_MOD_NAME_MOD2, name) == 0) || // spare, sometimes mapped to num lock.
-             (strcmp(XKB_MOD_NAME_MOD3, name) == 0) // spare, could be mapped to alt_r, caps lock, scroll lock, etc.
+    else if (
+        (strcmp(XKB_VMOD_NAME_META, name) == 0) || // virtual; the old meta (not the new meta/super/logo key)
+        (!mapMod2ToNumLock && strcmp(XKB_MOD_NAME_MOD2, name) == 0) || // spare, sometimes mapped to num lock.
+        (strcmp(XKB_MOD_NAME_MOD3, name) == 0) // spare, could be mapped to alt_r, caps lock, scroll lock, etc.
     )
       LOG_VERBOSE("modifier mask %s ignored", name);
     else
@@ -315,22 +318,15 @@ void EiKeyState::fakeKey(const Keystroke &keystroke)
 
 KeyID EiKeyState::mapKeyFromKeyval(uint32_t keyval) const
 {
-  // Get the base keysym from level 0, ignoring current modifiers.
-  // We need this because with newer xkeyboard-config, function keys use CTRL+ALT type,
-  // and xkb_state_key_get_one_sym() would return XF86_Switch_VT_* when Ctrl+Alt are
-  // pressed, instead of F1. We want to send F1 + modifiers to the server, not the
-  // VT switch action.
-  const auto shifted = xkb_keymap_num_levels_for_key(m_xkbKeymap, keyval, 0);
-  const xkb_keysym_t *syms;
-  int nsyms = xkb_keymap_key_get_syms_by_level(m_xkbKeymap, keyval, 0, shifted, &syms);
-
-  xkb_keysym_t xkbKeysym;
-  if (nsyms > 0) {
+  // Printable keys must retain their modifier-selected symbol (A, !, AltGr,
+  // keypad NumLock, etc.). Only function keys need a base-level override to
+  // avoid Ctrl+Alt turning F1 into the compositor's VT-switch keysym.
+  const auto layout = xkb_state_key_get_layout(m_xkbState, keyval);
+  const xkb_keysym_t *syms = nullptr;
+  const int count = xkb_keymap_key_get_syms_by_level(m_xkbKeymap, keyval, layout, 0, &syms);
+  auto xkbKeysym = xkb_state_key_get_one_sym(m_xkbState, keyval);
+  if (count > 0 && syms[0] >= XKB_KEY_F1 && syms[0] <= XKB_KEY_F35)
     xkbKeysym = syms[0];
-  } else {
-    // Fallback to state-based lookup if level 0 has no symbols
-    xkbKeysym = xkb_state_key_get_one_sym(m_xkbState, keyval);
-  }
 
   auto keysym = static_cast<KeySym>(xkbKeysym);
   KeyID keyid = XDGKeyUtil::mapKeySymToKeyID(keysym);

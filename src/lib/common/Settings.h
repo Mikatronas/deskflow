@@ -41,6 +41,7 @@ public:
     inline static const auto InvertXScroll = QStringLiteral("client/invertXScroll");
     inline static const auto YScrollScale = QStringLiteral("client/yScrollScale");
     inline static const auto XScrollScale = QStringLiteral("client/xScrollScale");
+    inline static const auto KeypadDigits = QStringLiteral("client/keypadDigits");
     inline static const auto LanguageSync = QStringLiteral("client/languageSync");
     inline static const auto RemoteHost = QStringLiteral("client/remoteHost");
     inline static const auto RecentRemoteHosts = QStringLiteral("client/recentRemoteHosts");
@@ -277,6 +278,7 @@ private:
       Client::DynamicConnectionRetry
     , Client::InvertYScroll
     , Client::InvertXScroll
+    , Client::KeypadDigits
     , Client::LanguageSync
     , Client::RemoteHost
     , Client::RecentRemoteHosts
@@ -353,6 +355,7 @@ private:
     , Client::DynamicConnectionRetry
     , Client::InvertYScroll
     , Client::InvertXScroll
+    , Client::KeypadDigits
     , Client::LanguageSync
     , Client::XdpClipboardRetried
     , Log::ToFile

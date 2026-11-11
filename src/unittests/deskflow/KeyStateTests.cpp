@@ -9,6 +9,7 @@
 #include "KeyStateTests.h"
 #include "base/EventQueue.h"
 #include "deskflow/KeyMap.h"
+#include "deskflow/KeypadPolicy.h"
 
 #include "MockEventQueue.h"
 #include "MockKeyMap.h"
@@ -298,21 +299,33 @@ void KeyStateTests::audit_scrollChunking()
   QVERIFY(dir.isValid());
   const auto previous = Settings::settingsFile();
   Settings::setSettingsFile(dir.filePath("audit.ini"));
-  Settings::setValue(Settings::Client::YScrollScale, 0.25);
-  Settings::setValue(Settings::Client::InvertYScroll, false);
-  Sink sink;
-  int individual = 0;
-  for (int i = 0; i < 1000; ++i)
-    individual += sink.applyScrollModifier({0, 1}).y;
-  const auto grouped = sink.applyScrollModifier({0, 1000}).y;
-  const auto installedNotch = sink.applyScrollModifier({0, 3}).y;
+  for (double scale : {0.1, 0.25, 1.0, 10.0}) {
+    Settings::setValue(Settings::Client::YScrollScale, scale);
+    Settings::setValue(Settings::Client::XScrollScale, scale);
+    for (bool invert : {false, true}) {
+      Settings::setValue(Settings::Client::InvertYScroll, invert);
+      Settings::setValue(Settings::Client::InvertXScroll, invert);
+      for (double divisor : {1.0, 4.0, 120.0}) {
+        Sink sink, grouped;
+        int x = 0, y = 0;
+        for (int i = 0; i < 1200; ++i) {
+          const auto delta = sink.applyScrollModifier({-1, 1}, divisor);
+          x += delta.x;
+          y += delta.y;
+        }
+        const auto total = grouped.applyScrollModifier({-1200, 1200}, divisor);
+        // Floating point accumulation may retain one final sub-unit; total error is bounded.
+        QVERIFY(std::abs(x - total.x) <= 1);
+        QVERIFY(std::abs(y - total.y) <= 1);
+        const auto reverse = sink.applyScrollModifier({1200, -1200}, divisor);
+        QVERIFY(std::abs(x + reverse.x) <= 1);
+        QVERIFY(std::abs(y + reverse.y) <= 1);
+        sink.resetScrollRemainder();
+        QCOMPARE(sink.applyScrollModifier({0, 0}, divisor).y, 0);
+      }
+    }
+  }
   Settings::setSettingsFile(previous);
-  qInfo(
-      "1000 single-line events=%d; one 1000-line event=%d; installed 3-line notch=%d", individual, grouped,
-      installedNotch
-  );
-  QEXPECT_FAIL("", "Audit: fractional scaling discards per-event remainder", Continue);
-  QCOMPARE(individual, grouped);
 }
 
 void KeyStateTests::audit_hotkeyRollover()
@@ -320,22 +333,19 @@ void KeyStateTests::audit_hotkeyRollover()
   deskflow::KeyMap map;
   for (int i = 1; i <= 2; ++i) {
     deskflow::KeyMap::KeyItem item;
-    item.m_id = '0' + i;
+    item.m_id = kKeyKP_0 + i;
     item.m_button = i;
     map.addKeyEntry(item);
   }
   map.finish();
   EventQueue events;
   RecordingKeyState state(&events, map, {"en"}, false);
-  // ConfigReadContext::parseKeystroke assigns server button 0 to every action.
-  state.fakeKeyDown('1', 0, 0, "en");
-  state.fakeKeyDown('2', 0, 0, "en");
-  const bool firstRelease = state.fakeKeyUp(0);
-  const bool secondRelease = state.fakeKeyUp(0);
-  qInfo("overlapping synthetic keys: releases=%d,%d", firstRelease, secondRelease);
-  QVERIFY(firstRelease);
-  QEXPECT_FAIL("", "Audit: configured keystrokes share server button zero and collide during rollover", Continue);
-  QVERIFY(secondRelease);
+  state.fakeKeyDown(keypadDigits(kKeyKP_End), 0, 87, "en");
+  state.fakeKeyDown(keypadDigits(kKeyKP_Down), 0, 88, "en");
+  QVERIFY(state.fakeKeyUp(87));
+  QVERIFY(state.fakeKeyUp(88));
+  QCOMPARE(state.countStrokes(deskflow::KeyMap::Keystroke::KeyType::Button), 4);
+  QCOMPARE(keypadDigits(kKeyLeft), kKeyLeft);
 }
 
 QTEST_MAIN(KeyStateTests)

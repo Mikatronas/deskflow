@@ -9,7 +9,9 @@
 #include "base/Log.h"
 #include "platform/EiClipboard.h"
 
+#include <chrono>
 #include <cstring>
+#include <fcntl.h>
 #include <poll.h>
 #include <unistd.h>
 
@@ -18,6 +20,7 @@
 #include <QDataStream>
 #include <QFile>
 #include <QImage>
+#include <QImageReader>
 #include <QList>
 #include <QPair>
 #include <QSet>
@@ -137,8 +140,15 @@ QByteArray PortalClipboard::decodeFormat(IClipboard::Format format, const QByteA
     return {};
 
   if (format == IClipboard::Format::Bitmap) {
-    QImage image;
-    if (!image.loadFromData(bytes, "PNG")) {
+    QBuffer input;
+    input.setData(bytes);
+    input.open(QIODevice::ReadOnly);
+    QImageReader reader(&input, "PNG");
+    const auto size = reader.size();
+    if (!size.isValid() || qint64(size.width()) * size.height() > 2560 * 1024)
+      return {};
+    QImage image = reader.read();
+    if (image.isNull()) {
       LOG_WARN("failed to decode clipboard png");
       return {};
     }
@@ -164,27 +174,36 @@ QByteArray PortalClipboard::readSelectionBytes(XdpSession *session, const char *
     return {};
   }
 
-  QFile pipe;
-  if (!pipe.open(fd, QIODevice::ReadOnly, QFileDevice::AutoCloseHandle)) {
-    LOG_WARN("failed to wrap clipboard pipe");
-    ::close(fd);
-    return {};
-  }
-
+  fcntl(fd, F_SETFL, fcntl(fd, F_GETFL) | O_NONBLOCK);
+  const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(2);
   QByteArray contents;
-  contents.reserve(std::min<qint64>(maxBytes, kChunkBytes));
-  while (contents.size() < maxBytes) {
+  bool complete = false;
+  while (std::chrono::steady_clock::now() < deadline) {
     pollfd pfd{fd, POLLIN, 0};
-    if (poll(&pfd, 1, kReadTimeoutMs) <= 0)
+    const int result = poll(&pfd, 1, kReadTimeoutMs);
+    if (result < 0 && errno == EINTR)
+      continue;
+    if (result < 0)
       break;
-
-    const auto chunk = pipe.read(std::min<qint64>(kChunkBytes, maxBytes - contents.size()));
-    if (chunk.isEmpty())
+    if (!result)
+      continue;
+    char buffer[65536];
+    const auto count = ::read(fd, buffer, sizeof(buffer));
+    if (count == 0) {
+      complete = true;
       break;
-
-    contents.append(chunk);
+    }
+    if (count < 0) {
+      if (errno == EAGAIN || errno == EINTR)
+        continue;
+      break;
+    }
+    if (contents.size() + count > maxBytes)
+      break;
+    contents.append(buffer, count);
   }
-  return contents;
+  ::close(fd);
+  return complete ? contents : QByteArray{};
 }
 
 void PortalClipboard::claimOwnership(EiClipboard *cache, XdpSession *session)
@@ -242,6 +261,7 @@ void PortalClipboard::serveSelectionTransfer(EiClipboard *cache, XdpSession *ses
     return;
   }
 
+  fcntl(fd, F_SETFL, fcntl(fd, F_GETFL) | O_NONBLOCK);
   QFile pipe;
   if (!pipe.open(fd, QIODevice::WriteOnly, QFileDevice::AutoCloseHandle)) {
     LOG_WARN("failed to wrap clipboard pipe");
@@ -253,7 +273,12 @@ void PortalClipboard::serveSelectionTransfer(EiClipboard *cache, XdpSession *ses
   const char *buf = data.constData();
   qint64 total = data.size();
   qint64 written = 0;
+  const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(2);
   while (written < total) {
+    if (std::chrono::steady_clock::now() >= deadline) {
+      xdp_session_selection_write_done(session, serial, false);
+      return;
+    }
     pollfd pfd{fd, POLLOUT, 0};
     if (poll(&pfd, 1, kWriteTimeoutMs) <= 0) {
       LOG_ERR("timed out writing clipboard selection");
@@ -261,7 +286,9 @@ void PortalClipboard::serveSelectionTransfer(EiClipboard *cache, XdpSession *ses
       return;
     }
 
-    qint64 n = pipe.write(buf + written, total - written);
+    qint64 n = ::write(fd, buf + written, std::min<qint64>(kChunkBytes, total - written));
+    if (n < 0 && (errno == EAGAIN || errno == EINTR))
+      continue;
     if (n <= 0) {
       LOG_ERR("clipboard pipe write returned %lld", static_cast<long long>(n));
       xdp_session_selection_write_done(session, serial, false);

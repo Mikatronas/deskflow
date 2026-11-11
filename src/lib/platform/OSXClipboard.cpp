@@ -69,7 +69,7 @@ bool OSXClipboard::synchronize()
   PasteboardSyncFlags flags = PasteboardSynchronize(m_pboard);
   LOG_VERBOSE("flags: %x", flags);
 
-  if (flags & kPasteboardModified) {
+  if ((flags & kPasteboardModified) && !(flags & kPasteboardClientIsOwner)) {
     return true;
   }
   return false;
