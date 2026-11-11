@@ -9,6 +9,7 @@
 #pragma once
 
 #include "deskflow/PlatformComputer.h"
+#include "deskflow/ScrollAnimation.h"
 #include "platform/OSXClipboard.h"
 #include "platform/OSXPowerManager.h"
 
@@ -108,6 +109,12 @@ protected:
 
 private:
   bool m_keypadDigits = false;
+  mutable ScrollAnimation m_scrollAnimation;
+  mutable EventQueueTimer *m_scrollTimer = nullptr;
+  mutable bool m_scrollGesture = false;
+  void animateScroll() const;
+  void stopScroll() const;
+  void postScroll(ScrollDelta delta, int phase) const;
   bool updateComputerShape();
   bool updateComputerShape(const CGDirectDisplayID, const CGDisplayChangeSummaryFlags);
   void postMouseEvent(CGPoint &) const;

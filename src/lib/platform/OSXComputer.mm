@@ -8,6 +8,7 @@
 
 #include "platform/OSXComputer.h"
 #include "deskflow/KeypadPolicy.h"
+#include <chrono>
 
 #include "arch/Arch.h"
 #include "arch/ArchException.h"
@@ -643,25 +644,59 @@ bool OSXComputer::fakeKeyRepeat(
   return PlatformComputer::fakeKeyRepeat(m_keypadDigits ? keypadDigits(id) : id, mask, count, button, lang);
 }
 
+namespace {
+double scrollTime()
+{
+  return std::chrono::duration<double>(std::chrono::steady_clock::now().time_since_epoch()).count();
+}
+} // namespace
+
 void OSXComputer::fakeMouseWheel(ScrollDelta delta) const
 {
-  if (delta.x != 0 || delta.y != 0) {
-    // Preserve sub-notch input and fractional sensitivity in pixel units.
-    // A conventional notch is 30 pixels at scale 1; no artificial momentum.
-    delta = applyScrollModifier(delta, s_scrollDelta / 30.0);
-    if (delta.x == 0 && delta.y == 0)
-      return;
-    CGEventRef scrollEvent = CGEventCreateScrollWheelEvent(nullptr, kCGScrollEventUnitPixel, 2, delta.y, delta.x);
-    if (!scrollEvent)
-      return;
-
-    // Fix for sticky keys
-    CGEventFlags modifiers = m_keyState->getModifierStateAsOSXFlags();
-    CGEventSetFlags(scrollEvent, modifiers);
-
-    CGEventPost(kCGHIDEventTap, scrollEvent);
-    CFRelease(scrollEvent);
+  delta = applyScrollModifier(delta, s_scrollDelta / 30.0);
+  if (!delta.x && !delta.y)
+    return;
+  m_scrollAnimation.add(delta, scrollTime());
+  if (!m_scrollTimer) {
+    m_scrollTimer = m_events->newTimer(1.0 / 120.0, nullptr);
+    m_events->addHandler(EventTypes::Timer, m_scrollTimer, [this](const auto &) { animateScroll(); });
   }
+}
+
+void OSXComputer::postScroll(ScrollDelta delta, int phase) const
+{
+  CGEventRef event = CGEventCreateScrollWheelEvent(nullptr, kCGScrollEventUnitPixel, 2, delta.y, delta.x);
+  if (!event)
+    return;
+  CGEventSetFlags(event, m_keyState->getModifierStateAsOSXFlags());
+  CGEventSetIntegerValueField(event, kCGScrollWheelEventScrollPhase, phase);
+  CGEventPost(kCGHIDEventTap, event);
+  CFRelease(event);
+}
+
+void OSXComputer::animateScroll() const
+{
+  const auto delta = m_scrollAnimation.step(scrollTime());
+  if (delta.x || delta.y) {
+    postScroll(delta, m_scrollGesture ? kCGScrollPhaseChanged : kCGScrollPhaseBegan);
+    m_scrollGesture = true;
+  }
+  if (!m_scrollAnimation.active())
+    stopScroll();
+}
+
+void OSXComputer::stopScroll() const
+{
+  if (m_scrollTimer) {
+    m_events->removeHandler(EventTypes::Timer, m_scrollTimer);
+    m_events->deleteTimer(m_scrollTimer);
+    m_scrollTimer = nullptr;
+  }
+  if (m_scrollGesture) {
+    postScroll({0, 0}, kCGScrollPhaseEnded);
+    m_scrollGesture = false;
+  }
+  m_scrollAnimation.reset();
 }
 
 void OSXComputer::showCursor()
@@ -776,6 +811,7 @@ void OSXComputer::enable()
 
 void OSXComputer::disable()
 {
+  stopScroll();
   showCursor();
 
   // FIXME -- stop watching jump zones, stop capturing input
@@ -846,6 +882,7 @@ bool OSXComputer::canLeave()
 
 void OSXComputer::leave()
 {
+  stopScroll();
   resetScrollRemainder();
   hideCursor();
   if (!m_isPrimary) {

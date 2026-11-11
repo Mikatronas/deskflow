@@ -7,6 +7,9 @@
  */
 
 #include "OSXKeyStateTests.h"
+#include "platform/OSXComputer.h"
+#include <QCursor>
+#include <QWheelEvent>
 
 #include "base/EventQueue.h"
 #include "deskflow/KeypadPolicy.h"
@@ -18,6 +21,7 @@
 #include <QKeyEvent>
 #include <QLineEdit>
 #include <QScopeGuard>
+#include <QTemporaryDir>
 #include <QTimer>
 #include <algorithm>
 #include <deque>
@@ -222,6 +226,85 @@ void OSXKeyStateTests::audit_nativeTyping()
       "inject-to-Qt delivery ms: p50=%.3f p95=%.3f p99=%.3f max=%.3f", receiver.latencyMs[249], receiver.latencyMs[474],
       receiver.latencyMs[494], receiver.latencyMs.back()
   );
+}
+
+void OSXKeyStateTests::audit_nativeScroll()
+{
+  if (!qEnvironmentVariableIsSet("DESKFLOW_AUDIT_LIVE"))
+    QSKIP("Native input test requires dedicated receiver and DESKFLOW_AUDIT_LIVE=1");
+  class Receiver : public QWidget
+  {
+  public:
+    int pixels = 0, frames = 0, ended = 0;
+    void wheelEvent(QWheelEvent *event) override
+    {
+      qInfo() << "wheel" << event->pixelDelta() << event->phase();
+      pixels += event->pixelDelta().y();
+      frames += event->pixelDelta().y() != 0;
+      ended += event->phase() == Qt::ScrollEnd;
+      event->accept();
+    }
+  } receiver;
+  receiver.setWindowTitle("Deskflow smooth wheel test");
+  receiver.resize(600, 300);
+  receiver.show();
+  receiver.raise();
+  receiver.activateWindow();
+  QVERIFY(QTest::qWaitForWindowActive(&receiver, 5000));
+  const auto oldCursor = QCursor::pos();
+  auto restore = qScopeGuard([&] { QCursor::setPos(oldCursor); });
+  QCursor::setPos(receiver.mapToGlobal(receiver.rect().center()));
+  EventQueue events;
+  AppUtilUnix appUtil(&events);
+  events.addEvent(Event(EventTypes::Quit));
+  events.loop();
+  QTemporaryDir settingsDir;
+  QVERIFY(settingsDir.isValid());
+  const auto oldSettings = Settings::settingsFile();
+  Settings::setSettingsFile(settingsDir.filePath("scroll.ini"));
+  auto restoreSettings = qScopeGuard([&] { Settings::setSettingsFile(oldSettings); });
+  Settings::setValue(Settings::Client::YScrollScale, 1.0);
+  OSXComputer computer(&events, false);
+
+  auto pump = [&](int milliseconds) {
+    QElapsedTimer elapsed;
+    elapsed.start();
+    while (elapsed.elapsed() < milliseconds) {
+      Event event;
+      if (events.getEvent(event, 0)) {
+        events.dispatchEvent(event);
+        Event::deleteData(event);
+      }
+      QCoreApplication::processEvents();
+      QTest::qWait(1);
+    }
+  };
+  pump(30);
+  receiver.raise();
+  receiver.activateWindow();
+  QCursor::setPos(receiver.mapToGlobal(receiver.rect().center()));
+  QVERIFY(AXIsProcessTrusted());
+  const auto center = QCursor::pos();
+  auto move =
+      CGEventCreateMouseEvent(nullptr, kCGEventMouseMoved, CGPointMake(center.x(), center.y()), kCGMouseButtonLeft);
+  CGEventPost(kCGHIDEventTap, move);
+  CFRelease(move);
+  pump(350);
+  computer.fakeMouseWheel({0, 120});
+  pump(250);
+  qInfo() << "Native scroll pixels/frames/end:" << receiver.pixels << receiver.frames << receiver.ended;
+  QCOMPARE(receiver.pixels, 30);
+  QVERIFY(receiver.frames >= 6);
+  QVERIFY(receiver.ended >= 1);
+  receiver.pixels = receiver.frames = receiver.ended = 0;
+  for (int i = 0; i < 10; ++i) {
+    computer.fakeMouseWheel({0, -120});
+    pump(15);
+  }
+  pump(250);
+  QCOMPARE(receiver.pixels, -300);
+  QVERIFY(receiver.frames >= 15);
+  QVERIFY(receiver.ended >= 1);
 }
 
 void OSXKeyStateTests::audit_nativeMixed_data()

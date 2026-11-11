@@ -10,6 +10,7 @@
 #include "base/EventQueue.h"
 #include "deskflow/KeyMap.h"
 #include "deskflow/KeypadPolicy.h"
+#include "deskflow/ScrollAnimation.h"
 
 #include "MockEventQueue.h"
 #include "MockKeyMap.h"
@@ -346,6 +347,50 @@ void KeyStateTests::audit_hotkeyRollover()
   QVERIFY(state.fakeKeyUp(88));
   QCOMPARE(state.countStrokes(deskflow::KeyMap::Keystroke::KeyType::Button), 4);
   QCOMPARE(keypadDigits(kKeyLeft), kKeyLeft);
+}
+
+void KeyStateTests::smoothWheelAnimation()
+{
+  ScrollAnimation animation;
+  animation.add({-30, 30}, 0);
+  int x = 0, y = 0, frames = 0;
+  for (int i = 1; i <= 13; ++i) {
+    auto delta = animation.step(i / 120.0);
+    x += delta.x;
+    y += delta.y;
+    if (delta.y)
+      ++frames;
+  }
+  QCOMPARE(x, -30);
+  QCOMPARE(y, 30);
+  QVERIFY(frames >= 8);
+  QVERIFY(!animation.active());
+  animation.add({0, 30}, 1);
+  QVERIFY(animation.step(1.02).y > 0);
+  animation.add({0, -30}, 1.02);
+  QVERIFY(animation.step(1.03).y < 0);
+  animation.reset();
+  QCOMPARE(animation.step(2).y, 0);
+  for (int i = 0; i < 100; ++i)
+    animation.add({0, 1}, 3);
+  QCOMPARE(animation.step(3.2).y, 100);
+  QVERIFY(!animation.active());
+  // Input arriving just after a frame must retain its entire distance.
+  animation.add({0, 30}, 4);
+  int total = animation.step(4.002).y;
+  animation.add({0, 30}, 4.003);
+  total += animation.step(4.2).y;
+  QCOMPARE(total, 60);
+  // Interleave sustained high-rate input and frames, then drain a delayed frame.
+  total = 0;
+  for (int i = 0; i < 1000; ++i) {
+    animation.add({0, 1}, 5 + i * 0.0001);
+    if (i % 83 == 0)
+      total += animation.step(5 + i * 0.0001).y;
+  }
+  total += animation.step(6).y;
+  QCOMPARE(total, 1000);
+  QVERIFY(!animation.active());
 }
 
 QTEST_MAIN(KeyStateTests)

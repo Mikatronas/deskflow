@@ -18,6 +18,7 @@ private Q_SLOTS:
   void initTestCase();
   void audit_100000Transitions();
   void audit_scrollChunking();
+  void smoothWheelAnimation();
   void audit_hotkeyRollover();
   void keyDown();
   void keyUp();
